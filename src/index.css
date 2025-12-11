@@ -1,0 +1,86 @@
+@import url('/fonts.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Apercu Pro', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Bot message styles */
+.bot-message h1, .bot-message h2, .bot-message h3, .bot-message h4 {
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  color: #1f1f1f;
+}
+
+.bot-message h1 { font-size: 1.75em; }
+.bot-message h2 { font-size: 1.5em; }
+.bot-message h3 { font-size: 1.3em; }
+.bot-message h4 { font-size: 1.15em; }
+
+.bot-message ul, .bot-message ol {
+  margin: 1em 0;
+  padding-left: 1.5em;
+  list-style-position: outside;
+}
+
+.bot-message ul {
+  list-style-type: disc;
+}
+
+.bot-message ol {
+  list-style-type: decimal;
+}
+
+.bot-message li {
+  margin: 0.5em 0;
+  line-height: 1.6;
+}
+
+.bot-message strong, .bot-message b {
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.bot-message em, .bot-message i {
+  font-style: italic;
+}
+
+.bot-message p {
+  margin: 0.75em 0;
+  line-height: 1.6;
+}
+
+.bot-message a {
+  color: #667eea;
+  text-decoration: underline;
+}
+
+.bot-message a:hover {
+  color: #f093fb;
+}
+
+.bot-message code {
+  background: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25em;
+  font-size: 0.9em;
+  font-family: 'Courier New', monospace;
+}
+
+.bot-message hr {
+  margin: 2em 0;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
