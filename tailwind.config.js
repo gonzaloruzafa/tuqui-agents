@@ -1,8 +1,9 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './lib/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -10,10 +11,6 @@ export default {
         'adhoc-violet': '#667eea',
         'adhoc-coral': '#f093fb',
         'adhoc-lavender': '#e9e4f0',
-      },
-      fontFamily: {
-        'display': ['"New Kansas"', 'system-ui', 'sans-serif'],
-        'sans': ['"Apercu Pro"', 'system-ui', 'sans-serif'],
       },
     },
   },

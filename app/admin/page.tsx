@@ -1,0 +1,782 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { 
+  Settings, Plus, Edit2, Trash2, FileText, Save, X, 
+  ChevronLeft, Upload, Eye, ToggleLeft, ToggleRight 
+} from 'lucide-react'
+
+interface Agent {
+  id: string
+  slug: string
+  name: string
+  description: string
+  icon: string
+  color: string
+  is_active: boolean
+  rag_enabled: boolean
+  system_prompt?: string
+  welcome_message?: string
+}
+
+interface Document {
+  id: string
+  title: string
+  source_type: string
+  created_at: string
+}
+
+export default function AdminPage() {
+  const [agents, setAgents] = useState<Agent[]>([])
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'config' | 'prompt' | 'documents'>('config')
+  const [editMode, setEditMode] = useState(false)
+  const [formData, setFormData] = useState<Partial<Agent>>({})
+  const [promptData, setPromptData] = useState({ systemPrompt: '', welcomeMessage: '' })
+  const [newDocContent, setNewDocContent] = useState({ title: '', content: '' })
+  const [showNewDocForm, setShowNewDocForm] = useState(false)
+  const [docInputType, setDocInputType] = useState<'manual' | 'file'>('manual')
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [showNewAgentForm, setShowNewAgentForm] = useState(false)
+  const [newAgentData, setNewAgentData] = useState({ 
+    name: '', 
+    slug: '', 
+    description: '', 
+    icon: 'Scale', 
+    color: 'blue',
+    systemPrompt: ''
+  })
+
+  useEffect(() => {
+    fetchAgents()
+  }, [])
+
+  useEffect(() => {
+    if (selectedAgent) {
+      fetchDocuments(selectedAgent.id)
+      setFormData(selectedAgent)
+      setPromptData({
+        systemPrompt: selectedAgent.system_prompt || '',
+        welcomeMessage: selectedAgent.welcome_message || ''
+      })
+    }
+  }, [selectedAgent])
+
+  const fetchAgents = async () => {
+    try {
+      const res = await fetch('/api/agents')
+      const data = await res.json()
+      setAgents(data)
+      if (data.length > 0 && !selectedAgent) {
+        setSelectedAgent(data[0])
+      }
+    } catch (error) {
+      console.error('Error fetching agents:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchDocuments = async (agentId: string) => {
+    try {
+      const res = await fetch(`/api/documents?agentId=${agentId}`)
+      const data = await res.json()
+      setDocuments(data)
+    } catch (error) {
+      console.error('Error fetching documents:', error)
+    }
+  }
+
+  const saveAgent = async () => {
+    if (!selectedAgent) return
+    
+    try {
+      const res = await fetch('/api/agents', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedAgent.id,
+          ...formData,
+          systemPrompt: promptData.systemPrompt
+        })
+      })
+      
+      if (res.ok) {
+        fetchAgents()
+        setEditMode(false)
+      }
+    } catch (error) {
+      console.error('Error saving agent:', error)
+    }
+  }
+
+  const toggleRag = async () => {
+    if (!selectedAgent) return
+    
+    try {
+      await fetch('/api/agents', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedAgent.id,
+          ragEnabled: !selectedAgent.rag_enabled
+        })
+      })
+      
+      setSelectedAgent({ ...selectedAgent, rag_enabled: !selectedAgent.rag_enabled })
+      fetchAgents()
+    } catch (error) {
+      console.error('Error toggling RAG:', error)
+    }
+  }
+
+  const addDocument = async () => {
+    if (!selectedAgent || !newDocContent.title || !newDocContent.content) return
+    
+    try {
+      const res = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: selectedAgent.id,
+          title: newDocContent.title,
+          content: newDocContent.content,
+          sourceType: 'manual'
+        })
+      })
+      
+      if (res.ok) {
+        fetchDocuments(selectedAgent.id)
+        setNewDocContent({ title: '', content: '' })
+        setShowNewDocForm(false)
+      } else {
+        const error = await res.json()
+        alert('Error: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Error adding document:', error)
+      alert('Error al agregar documento')
+    }
+  }
+
+  const uploadFile = async (file: File) => {
+    if (!selectedAgent) return
+    
+    setUploadingFile(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('agentId', selectedAgent.id)
+      formData.append('title', newDocContent.title || file.name.replace(/\.[^/.]+$/, ''))
+
+      const res = await fetch('/api/documents/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        alert(`Documento procesado: ${data.extractedLength} caracteres extraídos`)
+        fetchDocuments(selectedAgent.id)
+        setNewDocContent({ title: '', content: '' })
+        setShowNewDocForm(false)
+      } else {
+        const error = await res.json()
+        alert('Error: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      alert('Error al subir archivo')
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
+  const deleteDocument = async (docId: string) => {
+    if (!confirm('¿Eliminar este documento?')) return
+    
+    try {
+      await fetch(`/api/documents?id=${docId}`, { method: 'DELETE' })
+      if (selectedAgent) {
+        fetchDocuments(selectedAgent.id)
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error)
+    }
+  }
+
+  const createAgent = async () => {
+    if (!newAgentData.name || !newAgentData.slug) {
+      alert('Nombre y slug son requeridos')
+      return
+    }
+    
+    try {
+      const res = await fetch('/api/agents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newAgentData.name,
+          slug: newAgentData.slug,
+          description: newAgentData.description,
+          icon: newAgentData.icon,
+          color: newAgentData.color,
+          systemPrompt: newAgentData.systemPrompt || `Eres ${newAgentData.name}, un asistente útil.`
+        })
+      })
+      
+      if (res.ok) {
+        const agent = await res.json()
+        setShowNewAgentForm(false)
+        setNewAgentData({ name: '', slug: '', description: '', icon: 'Scale', color: 'blue', systemPrompt: '' })
+        await fetchAgents()
+        setSelectedAgent(agent)
+      } else {
+        const error = await res.json()
+        alert('Error: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Error creating agent:', error)
+    }
+  }
+
+  const deleteAgent = async (agentId: string) => {
+    if (!confirm('¿Eliminar este agente? Esta acción no se puede deshacer.')) return
+    
+    try {
+      await fetch(`/api/agents?id=${agentId}`, { method: 'DELETE' })
+      setSelectedAgent(null)
+      fetchAgents()
+    } catch (error) {
+      console.error('Error deleting agent:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="p-2 hover:bg-gray-100 rounded-lg">
+              <ChevronLeft className="w-5 h-5" />
+            </Link>
+            <Settings className="w-5 h-5 text-gray-600" />
+            <h1 className="font-semibold">Panel de Administración</h1>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex gap-6">
+          {/* Sidebar - Lista de Agentes */}
+          <div className="w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg border p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-medium text-gray-700">Agentes</h2>
+                <button 
+                  onClick={() => setShowNewAgentForm(true)}
+                  className="p-1.5 hover:bg-blue-50 rounded text-blue-600"
+                  title="Agregar agente"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="space-y-1">
+                {agents.map(agent => (
+                  <button
+                    key={agent.id}
+                    onClick={() => setSelectedAgent(agent)}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                      selectedAgent?.id === agent.id 
+                        ? 'bg-blue-50 text-blue-700' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="font-medium text-sm">{agent.name}</div>
+                    <div className="text-xs text-gray-500">/{agent.slug}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          {selectedAgent && (
+            <div className="flex-1">
+              <div className="bg-white rounded-lg border">
+                {/* Tabs */}
+                <div className="border-b px-4">
+                  <div className="flex gap-6">
+                    {[
+                      { id: 'config', label: 'Configuración', icon: Settings },
+                      { id: 'prompt', label: 'System Prompt', icon: Edit2 },
+                      { id: 'documents', label: 'Documentos RAG', icon: FileText }
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        className={`flex items-center gap-2 py-3 border-b-2 transition-colors ${
+                          activeTab === tab.id
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        <tab.icon className="w-4 h-4" />
+                        <span className="text-sm font-medium">{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-6">
+                  {activeTab === 'config' && (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium">{selectedAgent.name}</h3>
+                        <button
+                          onClick={() => setEditMode(!editMode)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50"
+                        >
+                          {editMode ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
+                          {editMode ? 'Cancelar' : 'Editar'}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                          <input
+                            type="text"
+                            value={formData.name || ''}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            disabled={!editMode}
+                            className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-50"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                          <input
+                            type="text"
+                            value={formData.slug || ''}
+                            disabled
+                            className="w-full px-3 py-2 border rounded-lg bg-gray-50 text-gray-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Icono</label>
+                          <select
+                            value={formData.icon || 'Bot'}
+                            onChange={e => setFormData({ ...formData, icon: e.target.value })}
+                            disabled={!editMode}
+                            className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-50"
+                          >
+                            <optgroup label="General">
+                              <option value="Bot">🤖 Bot</option>
+                              <option value="Brain">🧠 Brain</option>
+                              <option value="Sparkles">✨ Sparkles</option>
+                              <option value="MessageSquare">💬 MessageSquare</option>
+                              <option value="Lightbulb">💡 Lightbulb</option>
+                              <option value="Mail">✉️ Mail</option>
+                            </optgroup>
+                            <optgroup label="Negocios">
+                              <option value="Scale">⚖️ Scale (Legal)</option>
+                              <option value="Users">👥 Users (HR)</option>
+                              <option value="Briefcase">💼 Briefcase</option>
+                              <option value="TrendingUp">📈 TrendingUp</option>
+                              <option value="Calculator">🧮 Calculator</option>
+                              <option value="ShoppingCart">🛒 ShoppingCart</option>
+                            </optgroup>
+                            <optgroup label="Soporte">
+                              <option value="HeadphonesIcon">🎧 HeadphonesIcon</option>
+                              <option value="Wrench">🔧 Wrench</option>
+                              <option value="Shield">🛡️ Shield</option>
+                            </optgroup>
+                            <optgroup label="Educación">
+                              <option value="GraduationCap">🎓 GraduationCap</option>
+                              <option value="FileText">📄 FileText</option>
+                              <option value="Code">💻 Code</option>
+                            </optgroup>
+                            <optgroup label="Otros">
+                              <option value="Heart">❤️ Heart</option>
+                              <option value="Globe">🌐 Globe</option>
+                              <option value="Zap">⚡ Zap</option>
+                            </optgroup>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                          <input
+                            type="text"
+                            value={formData.color || ''}
+                            onChange={e => setFormData({ ...formData, color: e.target.value })}
+                            disabled={!editMode}
+                            className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-50"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                          <textarea
+                            value={formData.description || ''}
+                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                            disabled={!editMode}
+                            rows={2}
+                            className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-50"
+                          />
+                        </div>
+                      </div>
+
+                      {/* RAG Toggle */}
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <div className="font-medium">RAG Habilitado</div>
+                          <div className="text-sm text-gray-500">
+                            Buscar contexto relevante en documentos
+                          </div>
+                        </div>
+                        <button onClick={toggleRag} className="text-blue-600">
+                          {selectedAgent.rag_enabled 
+                            ? <ToggleRight className="w-8 h-8" /> 
+                            : <ToggleLeft className="w-8 h-8 text-gray-400" />
+                          }
+                        </button>
+                      </div>
+
+                      {editMode && (
+                        <button
+                          onClick={saveAgent}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          <Save className="w-4 h-4" />
+                          Guardar cambios
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'prompt' && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          System Prompt
+                        </label>
+                        <textarea
+                          value={promptData.systemPrompt}
+                          onChange={e => setPromptData({ ...promptData, systemPrompt: e.target.value })}
+                          rows={15}
+                          className="w-full px-3 py-2 border rounded-lg font-mono text-sm"
+                          placeholder="Sos un asistente que..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Mensaje de bienvenida
+                        </label>
+                        <input
+                          type="text"
+                          value={promptData.welcomeMessage}
+                          onChange={e => setPromptData({ ...promptData, welcomeMessage: e.target.value })}
+                          className="w-full px-3 py-2 border rounded-lg"
+                          placeholder="¡Hola! ¿En qué puedo ayudarte?"
+                        />
+                      </div>
+                      <button
+                        onClick={saveAgent}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      >
+                        <Save className="w-4 h-4" />
+                        Guardar prompt
+                      </button>
+                    </div>
+                  )}
+
+                  {activeTab === 'documents' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium">Documentos para RAG</h3>
+                        <button
+                          onClick={() => setShowNewDocForm(true)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Agregar documento
+                        </button>
+                      </div>
+
+                      {showNewDocForm && (
+                        <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                          {/* Tabs para tipo de input */}
+                          <div className="flex gap-2 border-b pb-2">
+                            <button
+                              onClick={() => setDocInputType('file')}
+                              className={`px-3 py-1 rounded-lg text-sm ${docInputType === 'file' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                            >
+                              📁 Subir archivo
+                            </button>
+                            <button
+                              onClick={() => setDocInputType('manual')}
+                              className={`px-3 py-1 rounded-lg text-sm ${docInputType === 'manual' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                            >
+                              ✏️ Texto manual
+                            </button>
+                          </div>
+
+                          <input
+                            type="text"
+                            value={newDocContent.title}
+                            onChange={e => setNewDocContent({ ...newDocContent, title: e.target.value })}
+                            placeholder="Título del documento (opcional para archivos)"
+                            className="w-full px-3 py-2 border rounded-lg"
+                          />
+
+                          {docInputType === 'file' ? (
+                            <div className="space-y-2">
+                              <input
+                                type="file"
+                                accept=".pdf,.txt,.md"
+                                onChange={e => {
+                                  const file = e.target.files?.[0]
+                                  if (file) uploadFile(file)
+                                }}
+                                disabled={uploadingFile}
+                                className="w-full px-3 py-2 border rounded-lg bg-white"
+                              />
+                              <p className="text-xs text-gray-500">
+                                Formatos soportados: PDF, TXT, MD
+                              </p>
+                              {uploadingFile && (
+                                <div className="flex items-center gap-2 text-blue-600">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                  Procesando archivo...
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              <textarea
+                                value={newDocContent.content}
+                                onChange={e => setNewDocContent({ ...newDocContent, content: e.target.value })}
+                                placeholder="Contenido del documento..."
+                                rows={6}
+                                className="w-full px-3 py-2 border rounded-lg"
+                              />
+                              <button
+                                onClick={addDocument}
+                                disabled={!newDocContent.title || !newDocContent.content}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Upload className="w-4 h-4" />
+                                Subir y procesar
+                              </button>
+                            </>
+                          )}
+
+                          <button
+                            onClick={() => {
+                              setShowNewDocForm(false)
+                              setNewDocContent({ title: '', content: '' })
+                            }}
+                            className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      )}
+
+                      {documents.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p>No hay documentos todavía</p>
+                          <p className="text-sm">Agregá documentos para que el agente use como contexto</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {documents.map(doc => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center justify-between p-3 border rounded-lg"
+                            >
+                              <div className="flex items-center gap-3">
+                                <FileText className="w-5 h-5 text-gray-400" />
+                                <div>
+                                  <div className="font-medium text-sm">{doc.title}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {doc.source_type} · {new Date(doc.created_at).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button className="p-1.5 hover:bg-gray-100 rounded text-gray-500">
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => deleteDocument(doc.id)}
+                                  className="p-1.5 hover:bg-red-50 rounded text-red-500"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modal para crear nuevo agente */}
+      {showNewAgentForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h2 className="font-semibold text-lg">Nuevo Agente</h2>
+              <button 
+                onClick={() => setShowNewAgentForm(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                  <input
+                    type="text"
+                    value={newAgentData.name}
+                    onChange={e => setNewAgentData({ ...newAgentData, name: e.target.value })}
+                    placeholder="Tuqui Ventas"
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Slug *</label>
+                  <input
+                    type="text"
+                    value={newAgentData.slug}
+                    onChange={e => setNewAgentData({ ...newAgentData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                    placeholder="ventas"
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Icono</label>
+                  <select
+                    value={newAgentData.icon}
+                    onChange={e => setNewAgentData({ ...newAgentData, icon: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  >
+                    <optgroup label="General">
+                      <option value="Bot">🤖 Bot</option>
+                      <option value="Brain">🧠 Brain</option>
+                      <option value="Sparkles">✨ Sparkles</option>
+                      <option value="Lightbulb">💡 Lightbulb</option>
+                      <option value="Zap">⚡ Zap</option>
+                    </optgroup>
+                    <optgroup label="Negocios">
+                      <option value="Scale">⚖️ Scale (Legal)</option>
+                      <option value="Users">👥 Users (HR)</option>
+                      <option value="Briefcase">💼 Briefcase</option>
+                      <option value="TrendingUp">📈 TrendingUp (Ventas)</option>
+                      <option value="ShoppingCart">🛒 ShoppingCart</option>
+                      <option value="Calculator">🧮 Calculator</option>
+                    </optgroup>
+                    <optgroup label="Soporte">
+                      <option value="HeadphonesIcon">🎧 Headphones</option>
+                      <option value="MessageSquare">💬 MessageSquare</option>
+                      <option value="Wrench">🔧 Wrench</option>
+                      <option value="Shield">🛡️ Shield</option>
+                    </optgroup>
+                    <optgroup label="Educación">
+                      <option value="GraduationCap">🎓 GraduationCap</option>
+                      <option value="FileText">📄 FileText</option>
+                      <option value="Code">💻 Code</option>
+                      <option value="Globe">🌐 Globe</option>
+                    </optgroup>
+                    <optgroup label="Otros">
+                      <option value="Heart">❤️ Heart</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                  <select
+                    value={newAgentData.color}
+                    onChange={e => setNewAgentData({ ...newAgentData, color: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  >
+                    <option value="blue">Azul</option>
+                    <option value="green">Verde</option>
+                    <option value="purple">Violeta</option>
+                    <option value="orange">Naranja</option>
+                    <option value="red">Rojo</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <input
+                  type="text"
+                  value={newAgentData.description}
+                  onChange={e => setNewAgentData({ ...newAgentData, description: e.target.value })}
+                  placeholder="Asistente de ventas para empresas"
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">System Prompt</label>
+                <textarea
+                  value={newAgentData.systemPrompt}
+                  onChange={e => setNewAgentData({ ...newAgentData, systemPrompt: e.target.value })}
+                  placeholder="Eres un asistente de ventas especializado..."
+                  rows={5}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+                <p className="text-xs text-gray-500 mt-1">Si lo dejás vacío, se generará uno básico</p>
+              </div>
+            </div>
+            
+            <div className="p-4 border-t flex justify-end gap-2">
+              <button
+                onClick={() => setShowNewAgentForm(false)}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={createAgent}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Crear Agente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
