@@ -3,7 +3,7 @@ import {
   ArrowRight, Scale, Users, Briefcase, HeadphonesIcon,
   Bot, Brain, Code, Lightbulb, MessageSquare, Sparkles,
   GraduationCap, Heart, ShoppingCart, TrendingUp, Wrench,
-  FileText, Calculator, Globe, Shield, Zap, Mail
+  FileText, Calculator, Globe, Shield, Zap, Mail, Settings
 } from 'lucide-react'
 import { getAllAgents, type AgentConfig } from '@/lib/agents-db'
 
@@ -42,9 +42,18 @@ const Header = () => (
       <a href="https://www.adhoc.inc" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
         <img src="/adhoc-logo.png" alt="Adhoc" className="h-8 w-auto" />
       </a>
-      <span className="text-sm text-gray-500 font-medium">
-        Tuqui Agents
-      </span>
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-gray-500 font-medium">
+          Tuqui Agents
+        </span>
+        <Link 
+          href="/admin"
+          className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
+        >
+          <Settings className="w-4 h-4" />
+          Admin
+        </Link>
+      </div>
     </div>
   </header>
 )

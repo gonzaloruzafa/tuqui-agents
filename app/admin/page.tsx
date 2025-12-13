@@ -34,10 +34,10 @@ interface AgentTool {
 }
 
 // Las tools se cargan dinámicamente desde la base de datos
-// Este objeto solo se usa para los iconos
-const TOOL_ICONS: Record<string, string> = {
-  web_search: '🔍',
-  odoo: '🟣' // Logo de Odoo (círculo púrpura)
+// Este objeto define los iconos (emoji o URL de imagen)
+const TOOL_ICONS: Record<string, { type: 'emoji' | 'image', value: string }> = {
+  web_search: { type: 'emoji', value: '🔍' },
+  odoo: { type: 'image', value: 'https://asset.brandfetch.io/idZAyFcRNA/idV4jHII25.svg' }
 }
 
 interface CompanyConfig {
@@ -574,69 +574,71 @@ export default function AdminPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Web Search Tool */}
-              <div className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🔍</span>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Búsqueda Web</h3>
-                      <p className="text-xs text-gray-500">slug: web_search</p>
+              {tools.map(tool => {
+                const iconConfig = TOOL_ICONS[tool.slug] || { type: 'emoji', value: '🔧' }
+                return (
+                  <div key={tool.slug} className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {iconConfig.type === 'emoji' ? (
+                          <span className="text-2xl">{iconConfig.value}</span>
+                        ) : (
+                          <img src={iconConfig.value} alt={tool.name} className="w-8 h-8" />
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{tool.name}</h3>
+                          <p className="text-xs text-gray-500">slug: {tool.slug}</p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-1 text-xs rounded-full ${tool.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                        {tool.enabled ? 'Activa' : 'Inactiva'}
+                      </span>
                     </div>
-                  </div>
-                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Activa</span>
-                </div>
-                <p className="text-sm text-gray-600 mb-3">
-                  Buscar información en tiempo real en internet usando Tavily.
-                </p>
-                <div className="space-y-2">
-                  <div className="text-xs">
-                    <span className="font-medium text-gray-700">Parámetros:</span>
-                    <ul className="mt-1 ml-4 list-disc text-gray-600">
-                      <li>query (string, requerido)</li>
-                    </ul>
-                  </div>
-                  <div className="text-xs">
-                    <span className="font-medium text-gray-700">Variable de entorno:</span>
-                    <code className="ml-1 bg-gray-100 px-1 py-0.5 rounded">TAVILY_API_KEY</code>
-                  </div>
-                </div>
-              </div>
-
-              {/* Odoo Tool */}
-              <div className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">📊</span>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Odoo</h3>
-                      <p className="text-xs text-gray-500">slug: odoo</p>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {tool.description}
+                    </p>
+                    <div className="space-y-2">
+                      {tool.parameters && tool.parameters.length > 0 && (
+                        <div className="text-xs">
+                          <span className="font-medium text-gray-700">Parámetros:</span>
+                          <ul className="mt-1 ml-4 list-disc text-gray-600">
+                            {tool.parameters.map((param: any, idx: number) => (
+                              <li key={idx}>
+                                {param.name} ({param.type}{param.required ? ', requerido' : ', opcional'})
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {tool.config && (
+                        <div className="text-xs">
+                          <span className="font-medium text-gray-700">Configuración:</span>
+                          <ul className="mt-1 ml-4 list-disc text-gray-600">
+                            {tool.config.env_vars && tool.config.env_vars.map((env: string, idx: number) => (
+                              <li key={idx}>Env: <code className="bg-gray-100 px-1 py-0.5 rounded">{env}</code></li>
+                            ))}
+                            {tool.config.company_config && (
+                              <li>Empresa: {tool.config.company_config.join(', ')}</li>
+                            )}
+                            {tool.config.notes && (
+                              <li className="text-gray-500">{tool.config.notes}</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
                     </div>
+                    {tool.slug === 'odoo' && (
+                      <button
+                        onClick={() => setAdminView('company')}
+                        className="mt-3 w-full px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Configurar Odoo
+                      </button>
+                    )}
                   </div>
-                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Activa</span>
-                </div>
-                <p className="text-sm text-gray-600 mb-3">
-                  Consultar datos de Odoo (clientes, facturas, productos, etc).
-                </p>
-                <div className="space-y-2">
-                  <div className="text-xs">
-                    <span className="font-medium text-gray-700">Parámetros:</span>
-                    <ul className="mt-1 ml-4 list-disc text-gray-600">
-                      <li>model (string, requerido)</li>
-                      <li>domain (array, opcional)</li>
-                      <li>fields (array, opcional)</li>
-                      <li>limit (number, opcional)</li>
-                    </ul>
-                  </div>
-                  <div className="text-xs">
-                    <span className="font-medium text-gray-700">Configuración:</span>
-                    <ul className="mt-1 ml-4 list-disc text-gray-600">
-                      <li>URL, DB, Usuario: en sección Empresa</li>
-                      <li>API Key: <code className="bg-gray-100 px-1 py-0.5 rounded">ODOO_API_KEY</code></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+                )
+              })}
             </div>
 
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1332,7 +1334,7 @@ export default function AdminPage() {
                         {availableTools.map(tool => {
                           const agentTool = agentTools.find(at => at.tool_slug === tool.slug)
                           const isEnabled = agentTool?.enabled ?? false
-                          const icon = TOOL_ICONS[tool.slug] || '🔧'
+                          const iconConfig = TOOL_ICONS[tool.slug] || { type: 'emoji', value: '🔧' }
                           
                           return (
                             <div 
@@ -1340,7 +1342,11 @@ export default function AdminPage() {
                               className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                             >
                               <div className="flex items-center gap-3">
-                                <span className="text-2xl">{icon}</span>
+                                {iconConfig.type === 'emoji' ? (
+                                  <span className="text-2xl">{iconConfig.value}</span>
+                                ) : (
+                                  <img src={iconConfig.value} alt={tool.name} className="w-8 h-8" />
+                                )}
                                 <div>
                                   <div className="font-medium">{tool.name}</div>
                                   <div className="text-sm text-gray-500">{tool.description}</div>
