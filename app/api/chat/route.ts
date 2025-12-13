@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAgentByIdFromDB } from '@/lib/agents-db'
 import { getAgentById } from '@/lib/agents'
 import { buildRAGContext } from '@/lib/rag'
+import { getAgentTools, generateToolsPrompt, parseToolCall, executeTool } from '@/lib/tools/executor'
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,6 +50,10 @@ export async function POST(request: NextRequest) {
       ragContext = await buildRAGContext(agentId, message)
     }
 
+    // Cargar tools del agente
+    const tools = await getAgentTools(agentId)
+    const toolsPrompt = generateToolsPrompt(tools)
+
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
@@ -66,14 +71,42 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Construir mensaje con system prompt + RAG context
-    const fullMessage = `${systemPrompt}${ragContext ? '\n\n' + ragContext : ''}\n\nUsuario: ${message}`
+    // Construir mensaje con system prompt + RAG context + Tools
+    const fullMessage = `${systemPrompt}${ragContext ? '\n\n' + ragContext : ''}${toolsPrompt ? '\n\n' + toolsPrompt : ''}\n\nUsuario: ${message}`
     
-    const result = await chat.sendMessage(fullMessage)
-    const response = await result.response
-    const text = response.text()
+    let result = await chat.sendMessage(fullMessage)
+    let response = await result.response
+    let text = response.text()
 
-    return NextResponse.json({ text })
+    // Info sobre tool usado (para mostrar en UI)
+    let toolUsed: { name: string; query?: string } | null = null
+
+    // Verificar si la respuesta es una llamada a tool
+    const toolCall = parseToolCall(text)
+    if (toolCall && tools.some(t => t.slug === toolCall.tool)) {
+      console.log(`[Chat] Ejecutando tool: ${toolCall.tool}`, toolCall.params)
+      
+      // Guardar info del tool para la UI
+      toolUsed = {
+        name: toolCall.tool === 'web_search' ? 'Búsqueda Web' : toolCall.tool,
+        query: toolCall.params?.query
+      }
+      
+      // Ejecutar el tool
+      const toolResult = await executeTool(toolCall.tool, toolCall.params)
+      
+      // Enviar el resultado al modelo para que genere la respuesta final
+      const toolResultMessage = toolResult.success 
+        ? `Resultado de ${toolCall.tool}:\n${JSON.stringify(toolResult.data, null, 2)}`
+        : `Error al ejecutar ${toolCall.tool}: ${toolResult.error}`
+      
+      const finalResult = await chat.sendMessage(
+        `El tool "${toolCall.tool}" devolvió:\n${toolResultMessage}\n\nAhora generá una respuesta clara y útil para el usuario basándote en esta información. NO uses JSON, respondé en lenguaje natural.`
+      )
+      text = (await finalResult.response).text()
+    }
+
+    return NextResponse.json({ text, toolUsed })
   } catch (error: any) {
     console.error('Chat API error:', error)
     return NextResponse.json(

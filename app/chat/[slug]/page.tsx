@@ -9,7 +9,7 @@ import {
   Bot, Brain, Code, Lightbulb, MessageSquare, Sparkles,
   GraduationCap, Heart, ShoppingCart, TrendingUp, Wrench,
   FileText, Calculator, Globe, Shield, Zap, Mail, Copy, Check,
-  Plus, Trash2, PanelLeftClose, PanelLeft
+  Plus, Trash2, PanelLeftClose, PanelLeft, Search
 } from 'lucide-react'
 import { marked } from 'marked'
 
@@ -32,6 +32,7 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   rawContent?: string
+  toolUsed?: { name: string; query?: string }
 }
 
 interface ChatSession {
@@ -384,6 +385,7 @@ export default function ChatPage() {
         role: 'assistant',
         content: htmlContent,
         rawContent: data.text || '',
+        toolUsed: data.toolUsed || undefined,
       }
 
       setMessages(prev => [...prev, botMessage])
@@ -589,6 +591,18 @@ export default function ChatPage() {
                           {getAgentIcon(agent.icon, 'md', 'text-adhoc-violet')}
                         </div>
                         <div className="flex-1 min-w-0">
+                          {/* Tool used indicator */}
+                          {msg.toolUsed && (
+                            <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+                              <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-600 rounded-full">
+                                <Search className="w-3 h-3" />
+                                <span>{msg.toolUsed.name}</span>
+                                {msg.toolUsed.query && (
+                                  <span className="text-blue-400">· "{msg.toolUsed.query}"</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                           <div className="text-[15px] leading-7 text-black">
                             <div 
                               className="bot-message max-w-none"

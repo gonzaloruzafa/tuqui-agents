@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
   Settings, Plus, Edit2, Trash2, FileText, Save, X, 
-  ChevronLeft, Upload, Eye, ToggleLeft, ToggleRight 
+  ChevronLeft, Upload, Eye, ToggleLeft, ToggleRight, Wrench, Globe 
 } from 'lucide-react'
 
 interface Agent {
@@ -27,12 +27,28 @@ interface Document {
   created_at: string
 }
 
+interface AgentTool {
+  id?: string
+  tool_slug: string
+  enabled: boolean
+}
+
+const AVAILABLE_TOOLS = [
+  {
+    slug: 'web_search',
+    name: 'Búsqueda Web',
+    description: 'Buscar información en tiempo real en internet usando Tavily',
+    icon: '🔍'
+  }
+]
+
 export default function AdminPage() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
   const [documents, setDocuments] = useState<Document[]>([])
+  const [agentTools, setAgentTools] = useState<AgentTool[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'config' | 'prompt' | 'documents'>('config')
+  const [activeTab, setActiveTab] = useState<'config' | 'prompt' | 'documents' | 'tools'>('config')
   const [editMode, setEditMode] = useState(false)
   const [formData, setFormData] = useState<Partial<Agent>>({})
   const [promptData, setPromptData] = useState({ systemPrompt: '', welcomeMessage: '' })
@@ -59,6 +75,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (selectedAgent) {
       fetchDocuments(selectedAgent.id)
+      fetchAgentTools(selectedAgent.id)
       setFormData(selectedAgent)
       setPromptData({
         systemPrompt: selectedAgent.system_prompt || '',
@@ -89,6 +106,42 @@ export default function AdminPage() {
       setDocuments(data)
     } catch (error) {
       console.error('Error fetching documents:', error)
+    }
+  }
+
+  const fetchAgentTools = async (agentId: string) => {
+    try {
+      const res = await fetch(`/api/agent-tools?agentId=${agentId}`)
+      const data = await res.json()
+      setAgentTools(data)
+    } catch (error) {
+      console.error('Error fetching agent tools:', error)
+      setAgentTools([])
+    }
+  }
+
+  const toggleTool = async (toolSlug: string) => {
+    if (!selectedAgent) return
+    
+    const existingTool = agentTools.find(t => t.tool_slug === toolSlug)
+    const newEnabled = existingTool ? !existingTool.enabled : true
+    
+    try {
+      const res = await fetch('/api/agent-tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: selectedAgent.id,
+          toolSlug,
+          enabled: newEnabled
+        })
+      })
+      
+      if (res.ok) {
+        fetchAgentTools(selectedAgent.id)
+      }
+    } catch (error) {
+      console.error('Error toggling tool:', error)
     }
   }
 
@@ -363,7 +416,8 @@ export default function AdminPage() {
                     {[
                       { id: 'config', label: 'Configuración', icon: Settings },
                       { id: 'prompt', label: 'System Prompt', icon: Edit2 },
-                      { id: 'documents', label: 'Documentos RAG', icon: FileText }
+                      { id: 'documents', label: 'Documentos RAG', icon: FileText },
+                      { id: 'tools', label: 'Herramientas', icon: Wrench }
                     ].map(tab => (
                       <button
                         key={tab.id}
@@ -785,6 +839,53 @@ export default function AdminPage() {
                           ))}
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {activeTab === 'tools' && (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="font-medium mb-1">Herramientas del Agente</h3>
+                        <p className="text-sm text-gray-500">
+                          Habilitá las herramientas que este agente puede usar durante las conversaciones.
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        {AVAILABLE_TOOLS.map(tool => {
+                          const agentTool = agentTools.find(at => at.tool_slug === tool.slug)
+                          const isEnabled = agentTool?.enabled ?? false
+                          
+                          return (
+                            <div 
+                              key={tool.slug}
+                              className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">{tool.icon}</span>
+                                <div>
+                                  <div className="font-medium">{tool.name}</div>
+                                  <div className="text-sm text-gray-500">{tool.description}</div>
+                                </div>
+                              </div>
+                              <button 
+                                onClick={() => toggleTool(tool.slug)}
+                                className="text-blue-600"
+                              >
+                                {isEnabled 
+                                  ? <ToggleRight className="w-8 h-8" /> 
+                                  : <ToggleLeft className="w-8 h-8 text-gray-400" />
+                                }
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      <div className="p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
+                        <strong>💡 Tip:</strong> Cuando la búsqueda web está habilitada, el agente puede buscar 
+                        información actualizada en internet cuando sea necesario para responder preguntas.
+                      </div>
                     </div>
                   )}
                 </div>
