@@ -26,9 +26,19 @@ async function getOdooConfig() {
 }
 
 export async function queryOdoo(params: OdooToolParams): Promise<ToolResult> {
+  console.log('[Odoo Tool] Starting query with params:', params)
+  
   // Leer config Odoo desde la tabla de configuración de tools
   const odooConfig = await getOdooConfig()
   const apiKey = process.env.ODOO_API_KEY
+  
+  console.log('[Odoo Tool] Config loaded:', { 
+    hasConfig: !!odooConfig,
+    url: odooConfig?.odoo_url,
+    db: odooConfig?.odoo_db,
+    user: odooConfig?.odoo_user,
+    hasApiKey: !!apiKey
+  })
   
   if (!odooConfig || !odooConfig.odoo_url || !odooConfig.odoo_db || !odooConfig.odoo_user) {
     return { success: false, error: 'Faltan datos de Odoo en la configuración. Configurá Odoo en Admin → Tools.' }
@@ -61,21 +71,33 @@ export async function queryOdoo(params: OdooToolParams): Promise<ToolResult> {
   }
 
   try {
+    console.log('[Odoo Tool] Calling:', url)
+    console.log('[Odoo Tool] Payload:', JSON.stringify(body, null, 2))
+    
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     })
+    
     if (!res.ok) {
-      return { success: false, error: `Odoo error: ${res.status}` }
+      const errorText = await res.text()
+      console.error('[Odoo Tool] HTTP Error:', res.status, errorText)
+      return { success: false, error: `Odoo HTTP error ${res.status}: ${errorText}` }
     }
+    
     const data = await res.json()
+    console.log('[Odoo Tool] Response:', data)
+    
     if (data.error) {
-      return { success: false, error: data.error.message }
+      console.error('[Odoo Tool] API Error:', data.error)
+      return { success: false, error: `Odoo API error: ${data.error.message || JSON.stringify(data.error)}` }
     }
+    
     return { success: true, data: data.result }
   } catch (err: any) {
-    return { success: false, error: err.message }
+    console.error('[Odoo Tool] Exception:', err)
+    return { success: false, error: `Odoo exception: ${err.message}` }
   }
 }
 
