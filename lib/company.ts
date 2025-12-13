@@ -10,6 +10,9 @@ export interface CompanyConfig {
   contact_info: string
   website_url: string  // URL del sitio web
   website_content: string  // Contenido scrapeado del sitio
+  odoo_url?: string
+  odoo_db?: string
+  odoo_user?: string
   created_at: string
   updated_at: string
 }

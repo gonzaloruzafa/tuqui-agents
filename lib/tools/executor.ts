@@ -14,7 +14,7 @@ export async function executeTool(
       return await searchWeb(params.query, params)
     }
     if (toolSlug === 'odoo') {
-      return await queryOdoo(params)
+      return await queryOdoo(params as any)
     }
 
     // Si no es builtin, buscar en la DB

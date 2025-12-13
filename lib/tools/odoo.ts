@@ -71,8 +71,8 @@ export const odooToolConfig = {
   type: 'builtin' as const,
   parameters: [
     { name: 'model', type: 'string' as const, description: 'Modelo de Odoo (ej: res.partner)', required: true },
-    { name: 'domain', type: 'array', description: 'Filtro de búsqueda (Odoo domain)', required: false },
-    { name: 'fields', type: 'array', description: 'Campos a devolver', required: false },
-    { name: 'limit', type: 'number', description: 'Máximo de resultados', required: false }
+    { name: 'domain', type: 'string' as const, description: 'Filtro de búsqueda (Odoo domain)', required: false },
+    { name: 'fields', type: 'string' as const, description: 'Campos a devolver', required: false },
+    { name: 'limit', type: 'number' as const, description: 'Máximo de resultados', required: false }
   ]
 }
