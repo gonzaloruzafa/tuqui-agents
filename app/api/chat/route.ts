@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
 
     // Intentar obtener agente de la DB, fallback a estático
     let agent = await getAgentByIdFromDB(agentId)
-    let systemPrompt = agent?.prompt?.content
+    let systemPrompt = agent?.system_prompt
     
-    if (!agent) {
+    if (!agent || !systemPrompt) {
       // Fallback a agentes estáticos
       const staticAgent = getAgentById(agentId)
       if (!staticAgent) {
@@ -29,6 +29,10 @@ export async function POST(request: NextRequest) {
         )
       }
       systemPrompt = staticAgent.systemPrompt
+      // Si no hay agent de DB, crear uno temporal para RAG
+      if (!agent) {
+        agent = { ...staticAgent, rag_enabled: false } as any
+      }
     }
 
     const apiKey = process.env.GEMINI_API_KEY

@@ -23,7 +23,7 @@ export async function searchRelevantDocs(
     const { data, error } = await supabase.rpc('tuqui_match_documents', {
       query_embedding: embedding,
       match_agent_id: agentId,
-      match_threshold: 0.7,
+      match_threshold: 0.5,  // Bajamos el threshold para encontrar más resultados
       match_count: limit
     })
 
@@ -52,13 +52,17 @@ export async function buildRAGContext(agentId: string, query: string): Promise<s
     .join('\n\n---\n\n')
 
   return `
-Contexto relevante de la base de conocimiento:
+=== DOCUMENTACIÓN DE REFERENCIA ===
 
 ${context}
 
----
+=== FIN DE DOCUMENTACIÓN ===
 
-Usa esta información para responder la consulta del usuario. Si la información no es relevante, ignorala.
+INSTRUCCIONES IMPORTANTES:
+- SOLO usá la información de la documentación anterior para responder.
+- Si la documentación no contiene información relevante, decí "No tengo información sobre eso en mi documentación".
+- NO inventes ni agregues información que no esté en los documentos.
+- Citá la fuente cuando sea posible.
 `
 }
 

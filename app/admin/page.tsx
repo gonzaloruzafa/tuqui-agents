@@ -517,71 +517,109 @@ export default function AdminPage() {
                       </div>
 
                       {showNewDocForm && (
-                        <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                        <div className="p-4 border rounded-lg bg-white shadow-sm space-y-4">
                           {/* Tabs para tipo de input */}
-                          <div className="flex gap-2 border-b pb-2">
+                          <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
                             <button
                               onClick={() => setDocInputType('file')}
-                              className={`px-3 py-1 rounded-lg text-sm ${docInputType === 'file' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${docInputType === 'file' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
                             >
                               📁 Subir archivo
                             </button>
                             <button
                               onClick={() => setDocInputType('manual')}
-                              className={`px-3 py-1 rounded-lg text-sm ${docInputType === 'manual' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${docInputType === 'manual' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
                             >
                               ✏️ Texto manual
                             </button>
                           </div>
 
-                          <input
-                            type="text"
-                            value={newDocContent.title}
-                            onChange={e => setNewDocContent({ ...newDocContent, title: e.target.value })}
-                            placeholder="Título del documento (opcional para archivos)"
-                            className="w-full px-3 py-2 border rounded-lg"
-                          />
-
                           {docInputType === 'file' ? (
-                            <div className="space-y-2">
-                              <input
-                                type="file"
-                                accept=".pdf,.txt,.md"
-                                onChange={e => {
-                                  const file = e.target.files?.[0]
-                                  if (file) uploadFile(file)
-                                }}
-                                disabled={uploadingFile}
-                                className="w-full px-3 py-2 border rounded-lg bg-white"
-                              />
-                              <p className="text-xs text-gray-500">
-                                Formatos soportados: PDF, TXT, MD
-                              </p>
-                              {uploadingFile && (
-                                <div className="flex items-center gap-2 text-blue-600">
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                  Procesando archivo...
-                                </div>
-                              )}
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Título (opcional)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={newDocContent.title}
+                                  onChange={e => setNewDocContent({ ...newDocContent, title: e.target.value })}
+                                  placeholder="Se usará el nombre del archivo si está vacío"
+                                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                                />
+                              </div>
+                              
+                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                                <input
+                                  type="file"
+                                  id="file-upload"
+                                  accept=".pdf,.txt,.md"
+                                  onChange={e => {
+                                    const file = e.target.files?.[0]
+                                    if (file) uploadFile(file)
+                                  }}
+                                  disabled={uploadingFile}
+                                  className="hidden"
+                                />
+                                <label 
+                                  htmlFor="file-upload" 
+                                  className={`cursor-pointer ${uploadingFile ? 'pointer-events-none' : ''}`}
+                                >
+                                  {uploadingFile ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                      <span className="text-blue-600 font-medium">Procesando archivo...</span>
+                                      <span className="text-xs text-gray-500">Extrayendo texto y generando embeddings</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-center gap-2">
+                                      <Upload className="w-8 h-8 text-gray-400" />
+                                      <span className="text-gray-600 font-medium">
+                                        Hacé clic para seleccionar un archivo
+                                      </span>
+                                      <span className="text-xs text-gray-400">
+                                        PDF, TXT o MD (máx 10MB)
+                                      </span>
+                                    </div>
+                                  )}
+                                </label>
+                              </div>
                             </div>
                           ) : (
-                            <>
-                              <textarea
-                                value={newDocContent.content}
-                                onChange={e => setNewDocContent({ ...newDocContent, content: e.target.value })}
-                                placeholder="Contenido del documento..."
-                                rows={6}
-                                className="w-full px-3 py-2 border rounded-lg"
-                              />
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Título *
+                                </label>
+                                <input
+                                  type="text"
+                                  value={newDocContent.title}
+                                  onChange={e => setNewDocContent({ ...newDocContent, title: e.target.value })}
+                                  placeholder="Ej: Manual de procedimientos"
+                                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Contenido *
+                                </label>
+                                <textarea
+                                  value={newDocContent.content}
+                                  onChange={e => setNewDocContent({ ...newDocContent, content: e.target.value })}
+                                  placeholder="Pegá el contenido del documento aquí..."
+                                  rows={8}
+                                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                                />
+                              </div>
                               <button
                                 onClick={addDocument}
                                 disabled={!newDocContent.title || !newDocContent.content}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                               >
                                 <Upload className="w-4 h-4" />
-                                Subir y procesar
+                                Procesar documento
                               </button>
-                            </>
+                            </div>
                           )}
 
                           <button
@@ -589,7 +627,7 @@ export default function AdminPage() {
                               setShowNewDocForm(false)
                               setNewDocContent({ title: '', content: '' })
                             }}
-                            className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+                            className="w-full px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50 text-sm"
                           >
                             Cancelar
                           </button>

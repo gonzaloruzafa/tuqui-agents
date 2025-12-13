@@ -1,12 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { addDocument } from '@/lib/rag'
-// @ts-ignore - pdf-parse types issue
-import pdfParse from 'pdf-parse'
 
-// Extraer texto de PDF
+// Extraer texto de PDF y limpiarlo
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParse = require('pdf-parse')
   const data = await pdfParse(buffer)
-  return data.text
+  
+  // Limpiar el texto: normalizar espacios y saltos de línea
+  let text = data.text
+  
+  // Reemplazar múltiples espacios/tabs por uno solo
+  text = text.replace(/[ \t]+/g, ' ')
+  
+  // Normalizar saltos de línea
+  text = text.replace(/\r\n/g, '\n')
+  text = text.replace(/\r/g, '\n')
+  
+  // Unir líneas que fueron cortadas en medio de una palabra
+  // (cuando una línea termina con letra minúscula y la siguiente empieza con minúscula)
+  text = text.replace(/([a-záéíóúñ])\n([a-záéíóúñ])/gi, '$1$2')
+  
+  // Reemplazar múltiples saltos de línea por doble salto (párrafos)
+  text = text.replace(/\n{3,}/g, '\n\n')
+  
+  // Agregar espacio después de puntos si falta
+  text = text.replace(/\.([A-ZÁÉÍÓÚÑ])/g, '. $1')
+  
+  return text.trim()
 }
 
 export async function POST(request: NextRequest) {
