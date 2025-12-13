@@ -8,6 +8,8 @@ export interface CompanyConfig {
   context: string  // Contexto general que se inyecta a todos los agentes
   values: string   // Valores/cultura
   contact_info: string
+  website_url: string  // URL del sitio web
+  website_content: string  // Contenido scrapeado del sitio
   created_at: string
   updated_at: string
 }
@@ -122,6 +124,10 @@ export function generateCompanyContext(config: CompanyConfig): string {
   
   if (config.contact_info) {
     parts.push(`\nInformación de contacto:\n${config.contact_info}`)
+  }
+
+  if (config.website_content) {
+    parts.push(`\nInformación del sitio web de la empresa:\n${config.website_content}`)
   }
 
   if (parts.length === 0) return ''

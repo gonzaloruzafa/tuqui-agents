@@ -50,6 +50,8 @@ interface CompanyConfig {
   context: string
   values: string
   contact_info: string
+  website_url: string
+  website_content: string
 }
 
 export default function AdminPage() {
@@ -71,9 +73,10 @@ export default function AdminPage() {
   const [showNewAgentForm, setShowNewAgentForm] = useState(false)
   const [adminView, setAdminView] = useState<'agents' | 'company'>('agents')
   const [companyConfig, setCompanyConfig] = useState<CompanyConfig>({
-    name: '', description: '', industry: '', context: '', values: '', contact_info: ''
+    name: '', description: '', industry: '', context: '', values: '', contact_info: '', website_url: '', website_content: ''
   })
   const [savingCompany, setSavingCompany] = useState(false)
+  const [scrapingCompanyWeb, setScrapingCompanyWeb] = useState(false)
   const [newAgentData, setNewAgentData] = useState({ 
     name: '', 
     slug: '', 
@@ -148,6 +151,53 @@ export default function AdminPage() {
       alert('Error al guardar configuración')
     } finally {
       setSavingCompany(false)
+    }
+  }
+
+  const scrapeCompanyWebsite = async () => {
+    if (!companyConfig.website_url) {
+      alert('Ingresá una URL primero')
+      return
+    }
+    
+    setScrapingCompanyWeb(true)
+    try {
+      const res = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: companyConfig.website_url,
+          crawl: true,
+          maxPages: 10
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        // Combinar contenido de todas las páginas
+        let combinedContent = ''
+        if (data.pages) {
+          combinedContent = data.pages.map((p: any) => `## ${p.title}\n${p.content}`).join('\n\n---\n\n')
+        } else if (data.content) {
+          combinedContent = `## ${data.title}\n${data.content}`
+        }
+        
+        // Limitar a ~10000 caracteres para no sobrecargar el prompt
+        if (combinedContent.length > 10000) {
+          combinedContent = combinedContent.substring(0, 10000) + '\n\n[Contenido truncado...]'
+        }
+        
+        setCompanyConfig({ ...companyConfig, website_content: combinedContent })
+        alert(`Sitio scrapeado: ${data.pagesFound || 1} páginas procesadas`)
+      } else {
+        const error = await res.json()
+        alert('Error: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Error scraping company website:', error)
+      alert('Error al scrapear el sitio')
+    } finally {
+      setScrapingCompanyWeb(false)
     }
   }
 
@@ -538,6 +588,51 @@ export default function AdminPage() {
                   rows={2}
                   className="w-full px-3 py-2 border rounded-lg"
                 />
+              </div>
+
+              {/* Sitio web de la empresa */}
+              <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    🌐 Sitio web de la empresa
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={companyConfig.website_url}
+                      onChange={e => setCompanyConfig({ ...companyConfig, website_url: e.target.value })}
+                      placeholder="https://www.tuempresa.com"
+                      className="flex-1 px-3 py-2 border rounded-lg"
+                    />
+                    <button
+                      onClick={scrapeCompanyWebsite}
+                      disabled={scrapingCompanyWeb || !companyConfig.website_url}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium whitespace-nowrap"
+                    >
+                      {scrapingCompanyWeb ? 'Scrapeando...' : 'Scrapear sitio'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Extrae información del sitio web para que los agentes conozcan mejor la empresa.
+                  </p>
+                </div>
+                
+                {companyConfig.website_content && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Contenido extraído del sitio
+                    </label>
+                    <textarea
+                      value={companyConfig.website_content}
+                      onChange={e => setCompanyConfig({ ...companyConfig, website_content: e.target.value })}
+                      rows={6}
+                      className="w-full px-3 py-2 border rounded-lg font-mono text-xs bg-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Podés editar este contenido manualmente si es necesario.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <button

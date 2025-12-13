@@ -23,7 +23,9 @@ export async function PUT(request: NextRequest) {
       industry: data.industry,
       context: data.context,
       values: data.values,
-      contact_info: data.contact_info
+      contact_info: data.contact_info,
+      website_url: data.website_url,
+      website_content: data.website_content
     })
 
     if (!config) {
