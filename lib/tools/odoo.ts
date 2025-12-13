@@ -25,6 +25,48 @@ async function getOdooConfig() {
   return data.config as { odoo_url?: string, odoo_db?: string, odoo_user?: string }
 }
 
+// Función para autenticar y obtener el UID
+async function authenticate(url: string, db: string, username: string, apiKey: string): Promise<number | null> {
+  try {
+    const authBody = {
+      jsonrpc: '2.0',
+      method: 'call',
+      id: Date.now(),
+      params: {
+        service: 'common',
+        method: 'authenticate',
+        args: [db, username, apiKey, {}]
+      }
+    }
+
+    console.log('[Odoo Auth] Authenticating user:', username)
+    
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(authBody)
+    })
+
+    if (!res.ok) {
+      console.error('[Odoo Auth] HTTP Error:', res.status)
+      return null
+    }
+
+    const data = await res.json()
+    console.log('[Odoo Auth] Response:', data)
+
+    if (data.error) {
+      console.error('[Odoo Auth] Error:', data.error)
+      return null
+    }
+
+    return data.result
+  } catch (err) {
+    console.error('[Odoo Auth] Exception:', err)
+    return null
+  }
+}
+
 export async function queryOdoo(params: OdooToolParams): Promise<ToolResult> {
   console.log('[Odoo Tool] Starting query with params:', params)
   
@@ -48,6 +90,16 @@ export async function queryOdoo(params: OdooToolParams): Promise<ToolResult> {
   }
 
   const url = `${odooConfig.odoo_url}/jsonrpc`
+  
+  // Primero autenticar para obtener el UID
+  const uid = await authenticate(url, odooConfig.odoo_db, odooConfig.odoo_user, apiKey)
+  
+  if (!uid) {
+    return { success: false, error: 'No se pudo autenticar con Odoo. Verificá las credenciales.' }
+  }
+  
+  console.log('[Odoo Tool] Authenticated with UID:', uid)
+
   const body = {
     jsonrpc: '2.0',
     method: 'call',
@@ -57,7 +109,7 @@ export async function queryOdoo(params: OdooToolParams): Promise<ToolResult> {
       method: 'execute_kw',
       args: [
         odooConfig.odoo_db,
-        odooConfig.odoo_user,
+        uid,
         apiKey,
         params.model,
         'search_read',
