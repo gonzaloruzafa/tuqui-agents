@@ -34,10 +34,10 @@ interface AgentTool {
 }
 
 // Las tools se cargan dinámicamente desde la base de datos
-// Este objeto define los iconos (emoji o URL de imagen)
-const TOOL_ICONS: Record<string, { type: 'emoji' | 'image', value: string }> = {
-  web_search: { type: 'emoji', value: '🔍' },
-  odoo: { type: 'image', value: 'https://asset.brandfetch.io/idZAyFcRNA/idV4jHII25.svg' }
+// Este objeto define los iconos (emoji solamente)
+const TOOL_ICONS: Record<string, string> = {
+  web_search: '🔍',
+  odoo: '🟣'
 }
 
 interface CompanyConfig {
@@ -78,6 +78,8 @@ export default function AdminPage() {
   const [editingTool, setEditingTool] = useState(false)
   const [toolFormData, setToolFormData] = useState<any>({})
   const [availableTools, setAvailableTools] = useState<any[]>([])
+  const [odooConfig, setOdooConfig] = useState({ odoo_url: '', odoo_db: '', odoo_user: '' })
+  const [savingOdoo, setSavingOdoo] = useState(false)
   const [companyConfig, setCompanyConfig] = useState<CompanyConfig>({
     name: '', description: '', industry: '', context: '', values: '', contact_info: '', website_url: '', website_content: ''
   })
@@ -132,6 +134,12 @@ export default function AdminPage() {
       const data = await res.json()
       if (data && data.id) {
         setCompanyConfig(data)
+        // Cargar config de Odoo separada
+        setOdooConfig({
+          odoo_url: data.odoo_url || '',
+          odoo_db: data.odoo_db || '',
+          odoo_user: data.odoo_user || ''
+        })
       }
     } catch (error) {
       console.error('Error fetching company config:', error)
@@ -159,6 +167,31 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Error fetching tools:', error)
+    }
+  }
+
+  const saveOdooConfig = async () => {
+    setSavingOdoo(true)
+    try {
+      const res = await fetch('/api/company', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...companyConfig,
+          ...odooConfig
+        })
+      })
+      if (res.ok) {
+        alert('Configuración de Odoo guardada correctamente')
+        fetchCompanyConfig()
+      } else {
+        alert('Error al guardar configuración de Odoo')
+      }
+    } catch (error) {
+      console.error('Error saving Odoo config:', error)
+      alert('Error al guardar configuración de Odoo')
+    } finally {
+      setSavingOdoo(false)
     }
   }
 
@@ -573,18 +606,14 @@ export default function AdminPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               {tools.map(tool => {
-                const iconConfig = TOOL_ICONS[tool.slug] || { type: 'emoji', value: '🔧' }
+                const icon = TOOL_ICONS[tool.slug] || '🔧'
                 return (
-                  <div key={tool.slug} className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
+                  <div key={tool.slug} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        {iconConfig.type === 'emoji' ? (
-                          <span className="text-2xl">{iconConfig.value}</span>
-                        ) : (
-                          <img src={iconConfig.value} alt={tool.name} className="w-8 h-8" />
-                        )}
+                        <span className="text-2xl">{icon}</span>
                         <div>
                           <h3 className="font-semibold text-gray-900">{tool.name}</h3>
                           <p className="text-xs text-gray-500">slug: {tool.slug}</p>
@@ -597,7 +626,7 @@ export default function AdminPage() {
                     <p className="text-sm text-gray-600 mb-3">
                       {tool.description}
                     </p>
-                    <div className="space-y-2">
+                    <div className="space-y-2 mb-4">
                       {tool.parameters && tool.parameters.length > 0 && (
                         <div className="text-xs">
                           <span className="font-medium text-gray-700">Parámetros:</span>
@@ -610,31 +639,78 @@ export default function AdminPage() {
                           </ul>
                         </div>
                       )}
-                      {tool.config && (
+                      {tool.config && tool.config.env_vars && (
                         <div className="text-xs">
-                          <span className="font-medium text-gray-700">Configuración:</span>
-                          <ul className="mt-1 ml-4 list-disc text-gray-600">
-                            {tool.config.env_vars && tool.config.env_vars.map((env: string, idx: number) => (
-                              <li key={idx}>Env: <code className="bg-gray-100 px-1 py-0.5 rounded">{env}</code></li>
-                            ))}
-                            {tool.config.company_config && (
-                              <li>Empresa: {tool.config.company_config.join(', ')}</li>
-                            )}
-                            {tool.config.notes && (
-                              <li className="text-gray-500">{tool.config.notes}</li>
-                            )}
-                          </ul>
+                          <span className="font-medium text-gray-700">Variable de entorno:</span>
+                          {tool.config.env_vars.map((env: string, idx: number) => (
+                            <div key={idx} className="mt-1">
+                              <code className="bg-gray-100 px-2 py-1 rounded text-xs">{env}</code>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
+                    
+                    {/* Configuración específica de Odoo */}
                     {tool.slug === 'odoo' && (
-                      <button
-                        onClick={() => setAdminView('company')}
-                        className="mt-3 w-full px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Settings className="w-4 h-4" />
-                        Configurar Odoo
-                      </button>
+                      <div className="border-t pt-4 space-y-3">
+                        <h4 className="text-sm font-medium text-gray-900">Configuración de Odoo</h4>
+                        <div className="grid grid-cols-1 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              URL de Odoo
+                            </label>
+                            <input
+                              type="text"
+                              value={odooConfig.odoo_url}
+                              onChange={e => setOdooConfig({ ...odooConfig, odoo_url: e.target.value })}
+                              placeholder="https://tu-empresa.odoo.com"
+                              className="w-full px-3 py-2 text-sm border rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Base de datos
+                            </label>
+                            <input
+                              type="text"
+                              value={odooConfig.odoo_db}
+                              onChange={e => setOdooConfig({ ...odooConfig, odoo_db: e.target.value })}
+                              placeholder="nombre_base_datos"
+                              className="w-full px-3 py-2 text-sm border rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Usuario
+                            </label>
+                            <input
+                              type="text"
+                              value={odooConfig.odoo_user}
+                              onChange={e => setOdooConfig({ ...odooConfig, odoo_user: e.target.value })}
+                              placeholder="usuario@empresa.com"
+                              className="w-full px-3 py-2 text-sm border rounded-lg"
+                            />
+                          </div>
+                          <button
+                            onClick={saveOdooConfig}
+                            disabled={savingOdoo}
+                            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                            {savingOdoo ? (
+                              <>Guardando...</>
+                            ) : (
+                              <>
+                                <Save className="w-4 h-4" />
+                                Guardar Configuración
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          La API Key de Odoo se configura en las variables de entorno de Vercel (ODOO_API_KEY).
+                        </p>
+                      </div>
                     )}
                   </div>
                 )
@@ -788,49 +864,6 @@ export default function AdminPage() {
                     </p>
                   </div>
                 )}
-              </div>
-
-              {/* Configuración Odoo */}
-              <div className="p-4 bg-gray-50 rounded-lg space-y-3 mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Integración Odoo</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">URL de Odoo</label>
-                    <input
-                      type="url"
-                      value={companyConfig.odoo_url || ''}
-                      onChange={e => setCompanyConfig({ ...companyConfig, odoo_url: e.target.value })}
-                      placeholder="https://miempresa.odoo.com"
-                      className="w-full px-3 py-2 border rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Base de datos</label>
-                    <input
-                      type="text"
-                      value={companyConfig.odoo_db || ''}
-                      onChange={e => setCompanyConfig({ ...companyConfig, odoo_db: e.target.value })}
-                      placeholder="Nombre de la base (db)"
-                      className="w-full px-3 py-2 border rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Usuario</label>
-                    <input
-                      type="text"
-                      value={companyConfig.odoo_user || ''}
-                      onChange={e => setCompanyConfig({ ...companyConfig, odoo_user: e.target.value })}
-                      placeholder="Email de usuario Odoo"
-                      className="w-full px-3 py-2 border rounded-lg"
-                    />
-                  </div>
-                </div>
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-xs text-blue-800">
-                    <strong>🔐 API Key:</strong> Por seguridad, la API key de Odoo debe configurarse como variable de entorno <code className="bg-blue-100 px-1 py-0.5 rounded">ODOO_API_KEY</code> en Vercel/servidor.
-                  </p>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Estos datos permiten a los agentes consultar información de Odoo (clientes, facturas, productos, etc).</p>
               </div>
 
               <button
@@ -1334,7 +1367,7 @@ export default function AdminPage() {
                         {availableTools.map(tool => {
                           const agentTool = agentTools.find(at => at.tool_slug === tool.slug)
                           const isEnabled = agentTool?.enabled ?? false
-                          const iconConfig = TOOL_ICONS[tool.slug] || { type: 'emoji', value: '🔧' }
+                          const icon = TOOL_ICONS[tool.slug] || '🔧'
                           
                           return (
                             <div 
@@ -1342,11 +1375,7 @@ export default function AdminPage() {
                               className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                             >
                               <div className="flex items-center gap-3">
-                                {iconConfig.type === 'emoji' ? (
-                                  <span className="text-2xl">{iconConfig.value}</span>
-                                ) : (
-                                  <img src={iconConfig.value} alt={tool.name} className="w-8 h-8" />
-                                )}
+                                <span className="text-2xl">{icon}</span>
                                 <div>
                                   <div className="font-medium">{tool.name}</div>
                                   <div className="text-sm text-gray-500">{tool.description}</div>
