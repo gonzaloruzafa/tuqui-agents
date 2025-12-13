@@ -160,13 +160,19 @@ export default function AdminPage() {
       return
     }
     
+    // Agregar https:// si falta
+    let url = companyConfig.website_url.trim()
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url
+    }
+    
     setScrapingCompanyWeb(true)
     try {
       const res = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          url: companyConfig.website_url,
+          url: url,
           crawl: true,
           maxPages: 10
         })
