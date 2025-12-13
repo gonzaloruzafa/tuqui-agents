@@ -113,6 +113,13 @@ export default function AdminPage() {
     }
   }, [selectedAgent])
 
+  // Auto-seleccionar primera tool cuando se cargan
+  useEffect(() => {
+    if (tools.length > 0 && !selectedTool && adminView === 'tools') {
+      setSelectedTool(tools[0])
+    }
+  }, [tools, adminView])
+
   const fetchAgents = async () => {
     try {
       const res = await fetch('/api/agents')
@@ -593,135 +600,185 @@ export default function AdminPage() {
       </header>
 
       {adminView === 'tools' ? (
-        /* Vista de Tools */
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <div className="bg-white rounded-lg border p-6">
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Wrench className="w-5 h-5 text-gray-600" />
-                Gestión de Tools
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Configurá las herramientas disponibles para los agentes.
+        /* Vista de Tools - Layout 2 columnas */
+        <div className="flex h-[calc(100vh-80px)]">
+          {/* Lista de Tools - Izquierda */}
+          <div className="w-80 bg-white border-r overflow-y-auto">
+            <div className="p-4 border-b bg-gray-50">
+              <h2 className="font-semibold text-sm text-gray-700">Tools Disponibles</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Seleccioná una tool para configurar
               </p>
             </div>
-
-            <div className="space-y-4">
+            <div className="p-2">
               {tools.map(tool => {
                 const icon = TOOL_ICONS[tool.slug] || '🔧'
+                const isSelected = selectedTool?.slug === tool.slug
                 return (
-                  <div key={tool.slug} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{icon}</span>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{tool.name}</h3>
-                          <p className="text-xs text-gray-500">slug: {tool.slug}</p>
-                        </div>
+                  <button
+                    key={tool.slug}
+                    onClick={() => setSelectedTool(tool)}
+                    className={`w-full p-3 rounded-lg mb-2 text-left transition-all ${
+                      isSelected 
+                        ? 'bg-blue-50 border-2 border-blue-500' 
+                        : 'bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">{icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-gray-900 truncate">{tool.name}</div>
+                        <div className="text-xs text-gray-500">slug: {tool.slug}</div>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${tool.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                      <span className={`px-1.5 py-0.5 text-xs rounded-full flex-shrink-0 ${
+                        tool.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      }`}>
                         {tool.enabled ? 'Activa' : 'Inactiva'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      {tool.description}
-                    </p>
-                    <div className="space-y-2 mb-4">
-                      {tool.parameters && tool.parameters.length > 0 && (
-                        <div className="text-xs">
-                          <span className="font-medium text-gray-700">Parámetros:</span>
-                          <ul className="mt-1 ml-4 list-disc text-gray-600">
-                            {tool.parameters.map((param: any, idx: number) => (
-                              <li key={idx}>
-                                {param.name} ({param.type}{param.required ? ', requerido' : ', opcional'})
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {tool.config && tool.config.env_vars && (
-                        <div className="text-xs">
-                          <span className="font-medium text-gray-700">Variable de entorno:</span>
-                          {tool.config.env_vars.map((env: string, idx: number) => (
-                            <div key={idx} className="mt-1">
-                              <code className="bg-gray-100 px-2 py-1 rounded text-xs">{env}</code>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Configuración específica de Odoo */}
-                    {tool.slug === 'odoo' && (
-                      <div className="border-t pt-4 space-y-3">
-                        <h4 className="text-sm font-medium text-gray-900">Configuración de Odoo</h4>
-                        <div className="grid grid-cols-1 gap-3">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              URL de Odoo
-                            </label>
-                            <input
-                              type="text"
-                              value={odooConfig.odoo_url}
-                              onChange={e => setOdooConfig({ ...odooConfig, odoo_url: e.target.value })}
-                              placeholder="https://tu-empresa.odoo.com"
-                              className="w-full px-3 py-2 text-sm border rounded-lg"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Base de datos
-                            </label>
-                            <input
-                              type="text"
-                              value={odooConfig.odoo_db}
-                              onChange={e => setOdooConfig({ ...odooConfig, odoo_db: e.target.value })}
-                              placeholder="nombre_base_datos"
-                              className="w-full px-3 py-2 text-sm border rounded-lg"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Usuario
-                            </label>
-                            <input
-                              type="text"
-                              value={odooConfig.odoo_user}
-                              onChange={e => setOdooConfig({ ...odooConfig, odoo_user: e.target.value })}
-                              placeholder="usuario@empresa.com"
-                              className="w-full px-3 py-2 text-sm border rounded-lg"
-                            />
-                          </div>
-                          <button
-                            onClick={saveOdooConfig}
-                            disabled={savingOdoo}
-                            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                          >
-                            {savingOdoo ? (
-                              <>Guardando...</>
-                            ) : (
-                              <>
-                                <Save className="w-4 h-4" />
-                                Guardar Configuración
-                              </>
-                            )}
-                          </button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          La API Key de Odoo se configura en las variables de entorno de Vercel (ODOO_API_KEY).
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                    <p className="text-xs text-gray-600 line-clamp-2">{tool.description}</p>
+                  </button>
                 )
               })}
             </div>
+          </div>
 
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>💡 Nota:</strong> Para habilitar/deshabilitar una tool para un agente específico, ve a la sección Agentes → Tools.
-              </p>
-            </div>
+          {/* Panel de Configuración - Derecha */}
+          <div className="flex-1 overflow-y-auto">
+            {selectedTool ? (
+              <div className="max-w-3xl mx-auto p-6">
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl">{TOOL_ICONS[selectedTool.slug] || '🔧'}</span>
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">{selectedTool.name}</h2>
+                      <p className="text-sm text-gray-500">slug: {selectedTool.slug}</p>
+                    </div>
+                    <span className={`ml-auto px-3 py-1 text-sm rounded-full ${
+                      selectedTool.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {selectedTool.enabled ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </div>
+                  <p className="text-gray-600">{selectedTool.description}</p>
+                </div>
+
+                {/* Información general */}
+                <div className="space-y-6">
+                  {/* Parámetros */}
+                  {selectedTool.parameters && selectedTool.parameters.length > 0 && (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="font-medium text-sm text-gray-900 mb-3">Parámetros</h3>
+                      <ul className="space-y-2">
+                        {selectedTool.parameters.map((param: any, idx: number) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm">
+                            <span className="text-blue-600 font-mono">•</span>
+                            <div>
+                              <span className="font-medium text-gray-900">{param.name}</span>
+                              <span className="text-gray-500"> ({param.type}</span>
+                              {param.required && <span className="text-red-600">, requerido</span>}
+                              {!param.required && <span className="text-gray-500">, opcional</span>}
+                              <span className="text-gray-500">)</span>
+                              {param.description && (
+                                <p className="text-xs text-gray-600 mt-0.5">{param.description}</p>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Variable de entorno */}
+                  {selectedTool.config && selectedTool.config.env_vars && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <h3 className="font-medium text-sm text-gray-900 mb-2">🔐 Variable de entorno requerida</h3>
+                      {selectedTool.config.env_vars.map((env: string, idx: number) => (
+                        <code key={idx} className="block bg-white px-3 py-2 rounded border text-sm font-mono">
+                          {env}
+                        </code>
+                      ))}
+                      <p className="text-xs text-gray-600 mt-2">
+                        Esta variable debe configurarse en las variables de entorno de Vercel.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Configuración específica de Odoo */}
+                  {selectedTool.slug === 'odoo' && (
+                    <div className="bg-white border rounded-lg p-6">
+                      <h3 className="font-medium text-lg text-gray-900 mb-4">Configuración de Odoo</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            URL de Odoo
+                          </label>
+                          <input
+                            type="text"
+                            value={odooConfig.odoo_url}
+                            onChange={e => setOdooConfig({ ...odooConfig, odoo_url: e.target.value })}
+                            placeholder="https://tu-empresa.odoo.com"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Base de datos
+                          </label>
+                          <input
+                            type="text"
+                            value={odooConfig.odoo_db}
+                            onChange={e => setOdooConfig({ ...odooConfig, odoo_db: e.target.value })}
+                            placeholder="nombre_base_datos"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Usuario
+                          </label>
+                          <input
+                            type="text"
+                            value={odooConfig.odoo_user}
+                            onChange={e => setOdooConfig({ ...odooConfig, odoo_user: e.target.value })}
+                            placeholder="usuario@empresa.com"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <button
+                          onClick={saveOdooConfig}
+                          disabled={savingOdoo}
+                          className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {savingOdoo ? (
+                            <>Guardando...</>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4" />
+                              Guardar Configuración
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Nota sobre habilitación por agente */}
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>💡 Nota:</strong> Para habilitar/deshabilitar esta tool para un agente específico, ve a la sección Agentes → seleccioná un agente → Tools.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                <div className="text-center">
+                  <Wrench className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                  <p>Seleccioná una tool de la lista para ver su configuración</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : adminView === 'company' ? (
