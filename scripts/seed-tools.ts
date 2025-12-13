@@ -30,38 +30,37 @@ const seedTools = async () => {
     {
       slug: 'odoo',
       name: 'Odoo ERP',
-      description: 'Queries Odoo ERP system to fetch business data (invoices, products, customers, orders, etc.).',
+      description: 'Queries Odoo ERP system to fetch business data (invoices, products, customers, orders, etc.). IMPORTANT: Dates must be in ISO format (YYYY-MM-DD HH:MM:SS). Example: 2024-12-13 00:00:00',
       type: 'builtin',
       parameters: [
         {
           name: 'model',
           type: 'string',
-          description: 'Odoo model name (e.g., account.move, product.product, res.partner)',
+          description: 'Odoo model name (e.g., sale.order for sales orders, account.move for invoices, res.partner for customers)',
           required: true
         },
         {
           name: 'domain',
           type: 'array',
-          description: 'Search domain filters in Odoo format',
+          description: 'Search domain filters in Odoo format. Example: [[\'date_order\', \'>=\', \'2024-12-13 00:00:00\']]',
           required: false
         },
         {
           name: 'fields',
           type: 'array',
-          description: 'List of fields to retrieve',
+          description: 'List of fields to retrieve. Example: [\'name\', \'amount_total\', \'date_order\']',
           required: false
         },
         {
           name: 'limit',
           type: 'number',
-          description: 'Maximum number of records to return',
+          description: 'Maximum number of records to return (default: 10)',
           required: false
         }
       ],
       config: {
         env_vars: ['ODOO_API_KEY'],
-        company_config: ['odoo_url', 'odoo_db', 'odoo_user'],
-        notes: 'Requires ODOO_API_KEY env var and company Odoo configuration (URL, database, user).'
+        notes: 'Requires ODOO_API_KEY env var and tool config (URL, database, user). Configure in Admin → Tools → Odoo.'
       },
       enabled: true
     }

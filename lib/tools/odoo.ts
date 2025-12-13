@@ -156,12 +156,12 @@ export async function queryOdoo(params: OdooToolParams): Promise<ToolResult> {
 export const odooToolConfig = {
   slug: 'odoo',
   name: 'Odoo',
-  description: 'Consultar datos de Odoo (clientes, facturas, productos, etc).',
+  description: 'Consultar datos de Odoo (clientes, facturas, productos, etc). IMPORTANTE: Las fechas deben estar en formato ISO (YYYY-MM-DD HH:MM:SS). Ejemplo: 2024-12-13 00:00:00',
   type: 'builtin' as const,
   parameters: [
-    { name: 'model', type: 'string' as const, description: 'Modelo de Odoo (ej: res.partner)', required: true },
-    { name: 'domain', type: 'string' as const, description: 'Filtro de búsqueda (Odoo domain)', required: false },
-    { name: 'fields', type: 'string' as const, description: 'Campos a devolver', required: false },
-    { name: 'limit', type: 'number' as const, description: 'Máximo de resultados', required: false }
+    { name: 'model', type: 'string' as const, description: 'Modelo de Odoo (ej: sale.order para órdenes de venta, account.move para facturas, res.partner para clientes)', required: true },
+    { name: 'domain', type: 'array' as const, description: 'Filtros de búsqueda en formato Odoo domain. Ejemplo: [[\'date_order\', \'>=\', \'2024-12-13 00:00:00\']]', required: false },
+    { name: 'fields', type: 'array' as const, description: 'Lista de campos a devolver. Ejemplo: [\'name\', \'amount_total\', \'date_order\']', required: false },
+    { name: 'limit', type: 'number' as const, description: 'Máximo de resultados a devolver (default: 10)', required: false }
   ]
 }
