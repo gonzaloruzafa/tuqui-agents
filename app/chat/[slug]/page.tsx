@@ -84,7 +84,36 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  // Sidebar: en mobile inicia cerrada, en desktop abierta
+  // Sidebar inicia cerrada en mobile, abierta en desktop
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Al montar, abrir sidebar solo si desktop
+  useEffect(() => {
+    if (window.innerWidth >= 768) {
+      setSidebarOpen(true)
+    } else {
+      setSidebarOpen(false)
+    }
+  }, [])
+
+  // Cerrar sidebar al cambiar a desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(true)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Si cambiás de agente (navegación), asegurá que en mobile quede cerrado
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setSidebarOpen(false)
+    }
+  }, [agentSlug])
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
@@ -431,13 +460,29 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-screen flex bg-white overflow-hidden">
-      {/* Sidebar - ChatGPT Style */}
-      <aside 
-        className={`${
-          sidebarOpen ? 'w-[260px]' : 'w-0'
-        } h-full bg-[#f9f9f9] flex flex-col transition-all duration-200 overflow-hidden flex-shrink-0 border-r border-gray-200/60`}
+    <div className="h-screen flex bg-white overflow-hidden relative">
+      {/* Overlay mobile (cuando sidebar abierto) */}
+      {sidebarOpen && (
+        <div className="md:hidden fixed inset-0 z-30 bg-black/30" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          fixed md:static top-0 left-0 h-full z-40 md:z-0 bg-[#f9f9f9] flex flex-col transition-transform duration-200 flex-shrink-0 border-r border-gray-200/60
+          w-[260px]
+        `}
+        style={{ boxShadow: sidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768 ? '0 0 0 9999px rgba(0,0,0,0.15)' : undefined }}
       >
+        {/* Botón cerrar mobile */}
+        <button
+          className="md:hidden absolute top-4 right-4 z-50 bg-white border border-gray-200 shadow rounded-full p-2 flex items-center justify-center"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Cerrar menú"
+        >
+          <PanelLeftClose className="w-6 h-6 text-gray-700" />
+        </button>
         {/* Logo */}
         <div className="p-4 pb-2">
           <img 
@@ -482,7 +527,10 @@ export default function ChatPage() {
                       ? 'bg-gray-200/70'
                       : 'hover:bg-gray-200/50'
                   }`}
-                  onClick={() => router.push(`/chat/${agentSlug}?session=${session.id}`)}
+                  onClick={() => {
+                    router.push(`/chat/${agentSlug}?session=${session.id}`)
+                    if (typeof window !== 'undefined' && window.innerWidth < 768) setSidebarOpen(false)
+                  }}
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-[14px] text-gray-900 truncate">
@@ -521,6 +569,10 @@ export default function ChatPage() {
         {/* Header */}
         <header className="flex-shrink-0 bg-white border-b border-gray-200/60">
           <div className="flex items-center h-14 px-4">
+            {/* Home button visible only on mobile to return to the main page quickly */}
+            <Link href="/" className="md:hidden mr-2 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <ArrowLeft className="w-5 h-5 text-gray-500" />
+            </Link>
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors mr-3"

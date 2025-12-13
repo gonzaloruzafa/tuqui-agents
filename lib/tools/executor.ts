@@ -1,6 +1,7 @@
 import { ToolConfig, ToolResult, BUILTIN_TOOLS } from './types'
 import { supabaseAdmin } from '@/lib/supabase'
 import { searchWeb, tavilyToolConfig } from './tavily'
+import { queryOdoo, odooToolConfig } from './odoo'
 
 // Ejecutar un tool basado en su configuración
 export async function executeTool(
@@ -11,6 +12,9 @@ export async function executeTool(
     // Primero verificar si es un tool builtin
     if (toolSlug === 'web_search') {
       return await searchWeb(params.query, params)
+    }
+    if (toolSlug === 'odoo') {
+      return await queryOdoo(params)
     }
 
     // Si no es builtin, buscar en la DB
@@ -141,22 +145,26 @@ export async function getAgentTools(agentId: string): Promise<ToolConfig[]> {
   const enabledSlugs = agentTools.map(at => at.tool_slug)
   const tools: ToolConfig[] = []
 
-  // Agregar tools builtin si están habilitados
-  if (enabledSlugs.includes('web_search')) {
-    tools.push(tavilyToolConfig)
-  }
-
-  // Agregar tools custom de la DB
-  const customSlugs = enabledSlugs.filter(s => s !== 'web_search')
-  if (customSlugs.length > 0) {
-    const { data: customTools } = await supabase
+  // Intentar cargar tools desde la DB primero
+  if (enabledSlugs.length > 0) {
+    const { data: dbTools } = await supabase
       .from('tuqui_tools')
       .select('*')
-      .in('slug', customSlugs)
+      .in('slug', enabledSlugs)
+      .eq('enabled', true)
 
-    if (customTools) {
-      tools.push(...customTools)
+    if (dbTools) {
+      tools.push(...dbTools)
     }
+  }
+
+  // Fallback: agregar tools builtin hardcodeadas si no están en la DB
+  const dbSlugs = tools.map(t => t.slug)
+  if (enabledSlugs.includes('web_search') && !dbSlugs.includes('web_search')) {
+    tools.push(tavilyToolConfig)
+  }
+  if (enabledSlugs.includes('odoo') && !dbSlugs.includes('odoo')) {
+    tools.push(odooToolConfig)
   }
 
   return tools

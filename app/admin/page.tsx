@@ -39,6 +39,12 @@ const AVAILABLE_TOOLS = [
     name: 'Búsqueda Web',
     description: 'Buscar información en tiempo real en internet usando Tavily',
     icon: '🔍'
+  },
+  {
+    slug: 'odoo',
+    name: 'Odoo',
+    description: 'Consultar datos de Odoo (clientes, facturas, productos, etc.)',
+    icon: '📊'
   }
 ]
 
@@ -52,6 +58,9 @@ interface CompanyConfig {
   contact_info: string
   website_url: string
   website_content: string
+  odoo_url?: string
+  odoo_db?: string
+  odoo_user?: string
 }
 
 export default function AdminPage() {
@@ -639,6 +648,49 @@ export default function AdminPage() {
                     </p>
                   </div>
                 )}
+              </div>
+
+              {/* Configuración Odoo */}
+              <div className="p-4 bg-gray-50 rounded-lg space-y-3 mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Integración Odoo</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">URL de Odoo</label>
+                    <input
+                      type="url"
+                      value={companyConfig.odoo_url || ''}
+                      onChange={e => setCompanyConfig({ ...companyConfig, odoo_url: e.target.value })}
+                      placeholder="https://miempresa.odoo.com"
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Base de datos</label>
+                    <input
+                      type="text"
+                      value={companyConfig.odoo_db || ''}
+                      onChange={e => setCompanyConfig({ ...companyConfig, odoo_db: e.target.value })}
+                      placeholder="Nombre de la base (db)"
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Usuario</label>
+                    <input
+                      type="text"
+                      value={companyConfig.odoo_user || ''}
+                      onChange={e => setCompanyConfig({ ...companyConfig, odoo_user: e.target.value })}
+                      placeholder="Email de usuario Odoo"
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs text-blue-800">
+                    <strong>🔐 API Key:</strong> Por seguridad, la API key de Odoo debe configurarse como variable de entorno <code className="bg-blue-100 px-1 py-0.5 rounded">ODOO_API_KEY</code> en Vercel/servidor.
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Estos datos permiten a los agentes consultar información de Odoo (clientes, facturas, productos, etc).</p>
               </div>
 
               <button
