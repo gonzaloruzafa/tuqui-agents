@@ -33,20 +33,12 @@ interface AgentTool {
   enabled: boolean
 }
 
-const AVAILABLE_TOOLS = [
-  {
-    slug: 'web_search',
-    name: 'Búsqueda Web',
-    description: 'Buscar información en tiempo real en internet usando Tavily',
-    icon: '🔍'
-  },
-  {
-    slug: 'odoo',
-    name: 'Odoo',
-    description: 'Consultar datos de Odoo (clientes, facturas, productos, etc.)',
-    icon: '📊'
-  }
-]
+// Las tools se cargan dinámicamente desde la base de datos
+// Este objeto solo se usa para los iconos
+const TOOL_ICONS: Record<string, string> = {
+  web_search: '🔍',
+  odoo: '🟣' // Logo de Odoo (círculo púrpura)
+}
 
 interface CompanyConfig {
   id?: string
@@ -80,7 +72,12 @@ export default function AdminPage() {
   const [urlInput, setUrlInput] = useState({ url: '', crawl: false, maxPages: 5 })
   const [scrapingUrl, setScrapingUrl] = useState(false)
   const [showNewAgentForm, setShowNewAgentForm] = useState(false)
-  const [adminView, setAdminView] = useState<'agents' | 'company'>('agents')
+  const [adminView, setAdminView] = useState<'agents' | 'company' | 'tools'>('agents')
+  const [tools, setTools] = useState<any[]>([])
+  const [selectedTool, setSelectedTool] = useState<any | null>(null)
+  const [editingTool, setEditingTool] = useState(false)
+  const [toolFormData, setToolFormData] = useState<any>({})
+  const [availableTools, setAvailableTools] = useState<any[]>([])
   const [companyConfig, setCompanyConfig] = useState<CompanyConfig>({
     name: '', description: '', industry: '', context: '', values: '', contact_info: '', website_url: '', website_content: ''
   })
@@ -98,6 +95,8 @@ export default function AdminPage() {
   useEffect(() => {
     fetchAgents()
     fetchCompanyConfig()
+    fetchTools()
+    fetchAvailableTools()
   }, [])
 
   useEffect(() => {
@@ -136,6 +135,49 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Error fetching company config:', error)
+    }
+  }
+
+  const fetchAvailableTools = async () => {
+    try {
+      const res = await fetch('/api/tools')
+      if (res.ok) {
+        const data = await res.json()
+        setAvailableTools(data)
+      }
+    } catch (error) {
+      console.error('Error fetching available tools:', error)
+    }
+  }
+
+  const fetchTools = async () => {
+    try {
+      const res = await fetch('/api/tools')
+      if (res.ok) {
+        const data = await res.json()
+        setTools(data)
+      }
+    } catch (error) {
+      console.error('Error fetching tools:', error)
+    }
+  }
+
+  const saveTool = async () => {
+    try {
+      const res = await fetch('/api/tools', {
+        method: selectedTool?.slug ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toolFormData)
+      })
+      if (res.ok) {
+        await fetchTools()
+        setEditingTool(false)
+        setSelectedTool(null)
+        alert('Tool guardada correctamente')
+      }
+    } catch (error) {
+      console.error('Error saving tool:', error)
+      alert('Error al guardar tool')
     }
   }
 
@@ -504,11 +546,107 @@ export default function AdminPage() {
               <Building2 className="w-4 h-4" />
               Empresa
             </button>
+            <button
+              onClick={() => setAdminView('tools')}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                adminView === 'tools' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Wrench className="w-4 h-4" />
+              Tools
+            </button>
           </div>
         </div>
       </header>
 
-      {adminView === 'company' ? (
+      {adminView === 'tools' ? (
+        /* Vista de Tools */
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <div className="bg-white rounded-lg border p-6">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-gray-600" />
+                Gestión de Tools
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Configurá las herramientas disponibles para los agentes.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Web Search Tool */}
+              <div className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🔍</span>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Búsqueda Web</h3>
+                      <p className="text-xs text-gray-500">slug: web_search</p>
+                    </div>
+                  </div>
+                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Activa</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">
+                  Buscar información en tiempo real en internet usando Tavily.
+                </p>
+                <div className="space-y-2">
+                  <div className="text-xs">
+                    <span className="font-medium text-gray-700">Parámetros:</span>
+                    <ul className="mt-1 ml-4 list-disc text-gray-600">
+                      <li>query (string, requerido)</li>
+                    </ul>
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-medium text-gray-700">Variable de entorno:</span>
+                    <code className="ml-1 bg-gray-100 px-1 py-0.5 rounded">TAVILY_API_KEY</code>
+                  </div>
+                </div>
+              </div>
+
+              {/* Odoo Tool */}
+              <div className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">📊</span>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Odoo</h3>
+                      <p className="text-xs text-gray-500">slug: odoo</p>
+                    </div>
+                  </div>
+                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Activa</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">
+                  Consultar datos de Odoo (clientes, facturas, productos, etc).
+                </p>
+                <div className="space-y-2">
+                  <div className="text-xs">
+                    <span className="font-medium text-gray-700">Parámetros:</span>
+                    <ul className="mt-1 ml-4 list-disc text-gray-600">
+                      <li>model (string, requerido)</li>
+                      <li>domain (array, opcional)</li>
+                      <li>fields (array, opcional)</li>
+                      <li>limit (number, opcional)</li>
+                    </ul>
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-medium text-gray-700">Configuración:</span>
+                    <ul className="mt-1 ml-4 list-disc text-gray-600">
+                      <li>URL, DB, Usuario: en sección Empresa</li>
+                      <li>API Key: <code className="bg-gray-100 px-1 py-0.5 rounded">ODOO_API_KEY</code></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Nota:</strong> Para habilitar/deshabilitar una tool para un agente específico, ve a la sección Agentes → Tools.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : adminView === 'company' ? (
         /* Vista de Configuración de Empresa */
         <div className="max-w-3xl mx-auto px-4 py-6">
           <div className="bg-white rounded-lg border p-6">
@@ -1186,9 +1324,15 @@ export default function AdminPage() {
                       </div>
 
                       <div className="space-y-3">
-                        {AVAILABLE_TOOLS.map(tool => {
+                        {availableTools.length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            Cargando herramientas...
+                          </div>
+                        )}
+                        {availableTools.map(tool => {
                           const agentTool = agentTools.find(at => at.tool_slug === tool.slug)
                           const isEnabled = agentTool?.enabled ?? false
+                          const icon = TOOL_ICONS[tool.slug] || '🔧'
                           
                           return (
                             <div 
@@ -1196,7 +1340,7 @@ export default function AdminPage() {
                               className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                             >
                               <div className="flex items-center gap-3">
-                                <span className="text-2xl">{tool.icon}</span>
+                                <span className="text-2xl">{icon}</span>
                                 <div>
                                   <div className="font-medium">{tool.name}</div>
                                   <div className="text-sm text-gray-500">{tool.description}</div>
