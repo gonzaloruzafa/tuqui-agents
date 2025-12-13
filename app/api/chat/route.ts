@@ -4,6 +4,7 @@ import { getAgentByIdFromDB } from '@/lib/agents-db'
 import { getAgentById } from '@/lib/agents'
 import { buildRAGContext } from '@/lib/rag'
 import { getAgentTools, generateToolsPrompt, parseToolCall, executeTool } from '@/lib/tools/executor'
+import { getCompanyConfig, generateCompanyContext } from '@/lib/company'
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +51,13 @@ export async function POST(request: NextRequest) {
       ragContext = await buildRAGContext(agentId, message)
     }
 
+    // Cargar contexto de empresa
+    let companyContext = ''
+    const companyConfig = await getCompanyConfig()
+    if (companyConfig) {
+      companyContext = generateCompanyContext(companyConfig)
+    }
+
     // Cargar tools del agente
     const tools = await getAgentTools(agentId)
     const toolsPrompt = generateToolsPrompt(tools)
@@ -71,8 +79,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Construir mensaje con system prompt + RAG context + Tools
-    const fullMessage = `${systemPrompt}${ragContext ? '\n\n' + ragContext : ''}${toolsPrompt ? '\n\n' + toolsPrompt : ''}\n\nUsuario: ${message}`
+    // Construir mensaje con: company context + system prompt + RAG context + Tools
+    const fullMessage = `${companyContext}${systemPrompt}${ragContext ? '\n\n' + ragContext : ''}${toolsPrompt ? '\n\n' + toolsPrompt : ''}\n\nUsuario: ${message}`
     
     let result = await chat.sendMessage(fullMessage)
     let response = await result.response

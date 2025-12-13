@@ -19,6 +19,22 @@ drop table if exists agents cascade;
 drop function if exists match_documents;
 
 -- ===========================================
+-- TABLA: tuqui_company_config
+-- Configuración global de la empresa
+-- ===========================================
+create table if not exists tuqui_company_config (
+  id uuid default gen_random_uuid() primary key,
+  name text,
+  description text,
+  industry text,
+  context text,
+  values text,
+  contact_info text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- ===========================================
 -- TABLA: tuqui_agents
 -- Configuración de cada agente
 -- ===========================================

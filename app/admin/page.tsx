@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
   Settings, Plus, Edit2, Trash2, FileText, Save, X, 
-  ChevronLeft, Upload, Eye, ToggleLeft, ToggleRight, Wrench, Globe 
+  ChevronLeft, Upload, Eye, ToggleLeft, ToggleRight, Wrench, Globe, Building2 
 } from 'lucide-react'
 
 interface Agent {
@@ -42,6 +42,16 @@ const AVAILABLE_TOOLS = [
   }
 ]
 
+interface CompanyConfig {
+  id?: string
+  name: string
+  description: string
+  industry: string
+  context: string
+  values: string
+  contact_info: string
+}
+
 export default function AdminPage() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
@@ -59,6 +69,11 @@ export default function AdminPage() {
   const [urlInput, setUrlInput] = useState({ url: '', crawl: false, maxPages: 5 })
   const [scrapingUrl, setScrapingUrl] = useState(false)
   const [showNewAgentForm, setShowNewAgentForm] = useState(false)
+  const [adminView, setAdminView] = useState<'agents' | 'company'>('agents')
+  const [companyConfig, setCompanyConfig] = useState<CompanyConfig>({
+    name: '', description: '', industry: '', context: '', values: '', contact_info: ''
+  })
+  const [savingCompany, setSavingCompany] = useState(false)
   const [newAgentData, setNewAgentData] = useState({ 
     name: '', 
     slug: '', 
@@ -70,6 +85,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchAgents()
+    fetchCompanyConfig()
   }, [])
 
   useEffect(() => {
@@ -96,6 +112,42 @@ export default function AdminPage() {
       console.error('Error fetching agents:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCompanyConfig = async () => {
+    try {
+      const res = await fetch('/api/company')
+      const data = await res.json()
+      if (data && data.id) {
+        setCompanyConfig(data)
+      }
+    } catch (error) {
+      console.error('Error fetching company config:', error)
+    }
+  }
+
+  const saveCompanyConfig = async () => {
+    setSavingCompany(true)
+    try {
+      const res = await fetch('/api/company', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(companyConfig)
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setCompanyConfig(data)
+        alert('Configuración guardada correctamente')
+      } else {
+        alert('Error al guardar configuración')
+      }
+    } catch (error) {
+      console.error('Error saving company config:', error)
+      alert('Error al guardar configuración')
+    } finally {
+      setSavingCompany(false)
     }
   }
 
@@ -368,9 +420,138 @@ export default function AdminPage() {
             <Settings className="w-5 h-5 text-gray-600" />
             <h1 className="font-semibold">Panel de Administración</h1>
           </div>
+          {/* Navigation tabs */}
+          <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
+            <button
+              onClick={() => setAdminView('agents')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                adminView === 'agents' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Agentes
+            </button>
+            <button
+              onClick={() => setAdminView('company')}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                adminView === 'company' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              Empresa
+            </button>
+          </div>
         </div>
       </header>
 
+      {adminView === 'company' ? (
+        /* Vista de Configuración de Empresa */
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          <div className="bg-white rounded-lg border p-6">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-gray-600" />
+                Configuración de Empresa
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Este contexto se aplicará a todos los agentes automáticamente.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre de la empresa
+                  </label>
+                  <input
+                    type="text"
+                    value={companyConfig.name}
+                    onChange={e => setCompanyConfig({ ...companyConfig, name: e.target.value })}
+                    placeholder="Ej: Adhoc S.A."
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Industria/Rubro
+                  </label>
+                  <input
+                    type="text"
+                    value={companyConfig.industry}
+                    onChange={e => setCompanyConfig({ ...companyConfig, industry: e.target.value })}
+                    placeholder="Ej: Tecnología, Software, Consultoría"
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descripción de la empresa
+                </label>
+                <textarea
+                  value={companyConfig.description}
+                  onChange={e => setCompanyConfig({ ...companyConfig, description: e.target.value })}
+                  placeholder="Breve descripción de qué hace la empresa..."
+                  rows={2}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Valores y Cultura
+                </label>
+                <textarea
+                  value={companyConfig.values}
+                  onChange={e => setCompanyConfig({ ...companyConfig, values: e.target.value })}
+                  placeholder="Valores de la empresa, cultura organizacional..."
+                  rows={3}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contexto adicional para los agentes
+                </label>
+                <textarea
+                  value={companyConfig.context}
+                  onChange={e => setCompanyConfig({ ...companyConfig, context: e.target.value })}
+                  placeholder="Información importante que todos los agentes deben conocer: políticas, procedimientos, datos relevantes..."
+                  rows={5}
+                  className="w-full px-3 py-2 border rounded-lg font-mono text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Este texto se incluirá en el prompt de todos los agentes.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Información de contacto
+                </label>
+                <textarea
+                  value={companyConfig.contact_info}
+                  onChange={e => setCompanyConfig({ ...companyConfig, contact_info: e.target.value })}
+                  placeholder="Email, teléfono, dirección, horarios de atención..."
+                  rows={2}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+
+              <button
+                onClick={saveCompanyConfig}
+                disabled={savingCompany}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {savingCompany ? 'Guardando...' : 'Guardar configuración'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-6">
           {/* Sidebar - Lista de Agentes */}
@@ -894,6 +1075,7 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* Modal para crear nuevo agente */}
       {showNewAgentForm && (
