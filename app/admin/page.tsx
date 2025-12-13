@@ -38,8 +38,10 @@ export default function AdminPage() {
   const [promptData, setPromptData] = useState({ systemPrompt: '', welcomeMessage: '' })
   const [newDocContent, setNewDocContent] = useState({ title: '', content: '' })
   const [showNewDocForm, setShowNewDocForm] = useState(false)
-  const [docInputType, setDocInputType] = useState<'manual' | 'file'>('manual')
+  const [docInputType, setDocInputType] = useState<'manual' | 'file' | 'url'>('manual')
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [urlInput, setUrlInput] = useState({ url: '', crawl: false, maxPages: 5 })
+  const [scrapingUrl, setScrapingUrl] = useState(false)
   const [showNewAgentForm, setShowNewAgentForm] = useState(false)
   const [newAgentData, setNewAgentData] = useState({ 
     name: '', 
@@ -192,6 +194,44 @@ export default function AdminPage() {
       alert('Error al subir archivo')
     } finally {
       setUploadingFile(false)
+    }
+  }
+
+  const scrapeUrl = async () => {
+    if (!selectedAgent || !urlInput.url) return
+    
+    setScrapingUrl(true)
+    try {
+      const res = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: urlInput.url,
+          agentId: selectedAgent.id,
+          crawl: urlInput.crawl,
+          maxPages: urlInput.maxPages
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        if (urlInput.crawl) {
+          alert(`Sitio scrapeado: ${data.pagesSaved} páginas guardadas de ${data.pagesFound} encontradas`)
+        } else {
+          alert(`Página scrapeada: "${data.title}" (${data.contentLength} caracteres)`)
+        }
+        fetchDocuments(selectedAgent.id)
+        setUrlInput({ url: '', crawl: false, maxPages: 5 })
+        setShowNewDocForm(false)
+      } else {
+        const error = await res.json()
+        alert('Error: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Error scraping URL:', error)
+      alert('Error al scrapear la URL')
+    } finally {
+      setScrapingUrl(false)
     }
   }
 
@@ -524,17 +564,88 @@ export default function AdminPage() {
                               onClick={() => setDocInputType('file')}
                               className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${docInputType === 'file' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
                             >
-                              📁 Subir archivo
+                              📁 Archivo
+                            </button>
+                            <button
+                              onClick={() => setDocInputType('url')}
+                              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${docInputType === 'url' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                            >
+                              🌐 URL Web
                             </button>
                             <button
                               onClick={() => setDocInputType('manual')}
                               className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${docInputType === 'manual' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
                             >
-                              ✏️ Texto manual
+                              ✏️ Manual
                             </button>
                           </div>
 
-                          {docInputType === 'file' ? (
+                          {docInputType === 'url' ? (
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  URL de la página web
+                                </label>
+                                <input
+                                  type="url"
+                                  value={urlInput.url}
+                                  onChange={e => setUrlInput({ ...urlInput, url: e.target.value })}
+                                  placeholder="https://ejemplo.com/pagina"
+                                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                                />
+                              </div>
+                              
+                              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <input
+                                  type="checkbox"
+                                  id="crawl-site"
+                                  checked={urlInput.crawl}
+                                  onChange={e => setUrlInput({ ...urlInput, crawl: e.target.checked })}
+                                  className="w-4 h-4 text-blue-600 rounded"
+                                />
+                                <label htmlFor="crawl-site" className="text-sm">
+                                  <span className="font-medium">Crawlear sitio completo</span>
+                                  <span className="text-gray-500 block text-xs">
+                                    Extrae contenido de múltiples páginas del mismo dominio
+                                  </span>
+                                </label>
+                              </div>
+                              
+                              {urlInput.crawl && (
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Máximo de páginas
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={urlInput.maxPages}
+                                    onChange={e => setUrlInput({ ...urlInput, maxPages: parseInt(e.target.value) || 5 })}
+                                    min={1}
+                                    max={20}
+                                    className="w-24 px-3 py-2 border rounded-lg text-sm"
+                                  />
+                                  <span className="text-xs text-gray-500 ml-2">(1-20)</span>
+                                </div>
+                              )}
+                              
+                              <button
+                                onClick={scrapeUrl}
+                                disabled={!urlInput.url || scrapingUrl}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                              >
+                                {scrapingUrl ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    {urlInput.crawl ? 'Crawleando sitio...' : 'Extrayendo contenido...'}
+                                  </>
+                                ) : (
+                                  <>
+                                    🌐 {urlInput.crawl ? 'Crawlear sitio' : 'Extraer contenido'}
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          ) : docInputType === 'file' ? (
                             <div className="space-y-4">
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -626,6 +737,7 @@ export default function AdminPage() {
                             onClick={() => {
                               setShowNewDocForm(false)
                               setNewDocContent({ title: '', content: '' })
+                              setUrlInput({ url: '', crawl: false, maxPages: 5 })
                             }}
                             className="w-full px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50 text-sm"
                           >
@@ -648,11 +760,13 @@ export default function AdminPage() {
                               className="flex items-center justify-between p-3 border rounded-lg"
                             >
                               <div className="flex items-center gap-3">
-                                <FileText className="w-5 h-5 text-gray-400" />
+                                <span className="text-lg">
+                                  {doc.source_type === 'web' ? '🌐' : doc.source_type === 'file' ? '📁' : '📝'}
+                                </span>
                                 <div>
                                   <div className="font-medium text-sm">{doc.title}</div>
                                   <div className="text-xs text-gray-500">
-                                    {doc.source_type} · {new Date(doc.created_at).toLocaleDateString()}
+                                    {doc.source_type === 'web' ? 'Web' : doc.source_type === 'file' ? 'Archivo' : 'Manual'} · {new Date(doc.created_at).toLocaleDateString()}
                                   </div>
                                 </div>
                               </div>
