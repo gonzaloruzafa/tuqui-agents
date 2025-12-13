@@ -99,6 +99,7 @@ export default function AdminPage() {
     fetchCompanyConfig()
     fetchTools()
     fetchAvailableTools()
+    fetchOdooConfig()
   }, [])
 
   useEffect(() => {
@@ -141,15 +142,25 @@ export default function AdminPage() {
       const data = await res.json()
       if (data && data.id) {
         setCompanyConfig(data)
-        // Cargar config de Odoo separada
-        setOdooConfig({
-          odoo_url: data.odoo_url || '',
-          odoo_db: data.odoo_db || '',
-          odoo_user: data.odoo_user || ''
-        })
       }
     } catch (error) {
       console.error('Error fetching company config:', error)
+    }
+  }
+
+  const fetchOdooConfig = async () => {
+    try {
+      const res = await fetch('/api/tool-config?slug=odoo')
+      const data = await res.json()
+      if (data && data.config) {
+        setOdooConfig({
+          odoo_url: data.config.odoo_url || '',
+          odoo_db: data.config.odoo_db || '',
+          odoo_user: data.config.odoo_user || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching Odoo config:', error)
     }
   }
 
@@ -180,29 +191,19 @@ export default function AdminPage() {
   const saveOdooConfig = async () => {
     setSavingOdoo(true)
     try {
-      const payload = {
-        ...companyConfig,
-        odoo_url: odooConfig.odoo_url,
-        odoo_db: odooConfig.odoo_db,
-        odoo_user: odooConfig.odoo_user
-      }
-      
-      console.log('Saving Odoo config:', payload)
-      
-      const res = await fetch('/api/company', {
-        method: 'PUT',
+      const res = await fetch('/api/tool-config', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          tool_slug: 'odoo',
+          config: odooConfig
+        })
       })
       
       if (res.ok) {
-        const data = await res.json()
-        console.log('Saved successfully:', data)
         alert('Configuración de Odoo guardada correctamente')
-        await fetchCompanyConfig()
+        await fetchOdooConfig()
       } else {
-        const error = await res.text()
-        console.error('Error response:', error)
         alert('Error al guardar configuración de Odoo')
       }
     } catch (error) {

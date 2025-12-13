@@ -1,5 +1,5 @@
 import { ToolResult } from './types'
-import { getCompanyConfig } from '../company'
+import { supabaseAdmin } from '../supabase'
 
 // Interfaz para los parámetros esperados por la tool
 export interface OdooToolParams {
@@ -9,20 +9,35 @@ export interface OdooToolParams {
   limit?: number
 }
 
-// Esta función debería recibir la config de Odoo (url, apiKey, db, user)
-// En este ejemplo, se asume que la config viene por env vars (luego se puede leer de la base por empresa)
+// Función para obtener la config de Odoo desde la tabla tuqui_tool_configs
+async function getOdooConfig() {
+  const supabase = supabaseAdmin()
+  const { data, error } = await supabase
+    .from('tuqui_tool_configs')
+    .select('config')
+    .eq('tool_slug', 'odoo')
+    .single()
+  
+  if (error || !data) {
+    return null
+  }
+  
+  return data.config as { odoo_url?: string, odoo_db?: string, odoo_user?: string }
+}
+
 export async function queryOdoo(params: OdooToolParams): Promise<ToolResult> {
-  // Leer config Odoo de la empresa (url, db, user)
-  const companyConfig = await getCompanyConfig()
+  // Leer config Odoo desde la tabla de configuración de tools
+  const odooConfig = await getOdooConfig()
   const apiKey = process.env.ODOO_API_KEY
-  if (!companyConfig || !companyConfig.odoo_url || !companyConfig.odoo_db || !companyConfig.odoo_user) {
-    return { success: false, error: 'Faltan datos de Odoo en la configuración de la empresa' }
+  
+  if (!odooConfig || !odooConfig.odoo_url || !odooConfig.odoo_db || !odooConfig.odoo_user) {
+    return { success: false, error: 'Faltan datos de Odoo en la configuración. Configurá Odoo en Admin → Tools.' }
   }
   if (!apiKey) {
     return { success: false, error: 'Falta la API key de Odoo en las variables de entorno' }
   }
 
-  const url = `${companyConfig.odoo_url}/jsonrpc`
+  const url = `${odooConfig.odoo_url}/jsonrpc`
   const body = {
     jsonrpc: '2.0',
     method: 'call',
@@ -31,8 +46,8 @@ export async function queryOdoo(params: OdooToolParams): Promise<ToolResult> {
       service: 'object',
       method: 'execute_kw',
       args: [
-        companyConfig.odoo_db,
-        companyConfig.odoo_user,
+        odooConfig.odoo_db,
+        odooConfig.odoo_user,
         apiKey,
         params.model,
         'search_read',
