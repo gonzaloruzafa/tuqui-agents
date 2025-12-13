@@ -180,18 +180,29 @@ export default function AdminPage() {
   const saveOdooConfig = async () => {
     setSavingOdoo(true)
     try {
+      const payload = {
+        ...companyConfig,
+        odoo_url: odooConfig.odoo_url,
+        odoo_db: odooConfig.odoo_db,
+        odoo_user: odooConfig.odoo_user
+      }
+      
+      console.log('Saving Odoo config:', payload)
+      
       const res = await fetch('/api/company', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...companyConfig,
-          ...odooConfig
-        })
+        body: JSON.stringify(payload)
       })
+      
       if (res.ok) {
+        const data = await res.json()
+        console.log('Saved successfully:', data)
         alert('Configuración de Odoo guardada correctamente')
-        fetchCompanyConfig()
+        await fetchCompanyConfig()
       } else {
+        const error = await res.text()
+        console.error('Error response:', error)
         alert('Error al guardar configuración de Odoo')
       }
     } catch (error) {
@@ -1435,7 +1446,7 @@ export default function AdminPage() {
                         {availableTools.map(tool => {
                           const agentTool = agentTools.find(at => at.tool_slug === tool.slug)
                           const isEnabled = agentTool?.enabled ?? false
-                          const icon = TOOL_ICONS[tool.slug] || '🔧'
+                          const iconConfig = TOOL_ICONS[tool.slug] || { type: 'emoji', value: '🔧' }
                           
                           return (
                             <div 
@@ -1443,7 +1454,11 @@ export default function AdminPage() {
                               className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                             >
                               <div className="flex items-center gap-3">
-                                <span className="text-2xl">{icon}</span>
+                                {iconConfig.type === 'emoji' ? (
+                                  <span className="text-2xl">{iconConfig.value}</span>
+                                ) : (
+                                  <img src={iconConfig.value} alt={tool.name} className="w-8 h-8 rounded" />
+                                )}
                                 <div>
                                   <div className="font-medium">{tool.name}</div>
                                   <div className="text-sm text-gray-500">{tool.description}</div>

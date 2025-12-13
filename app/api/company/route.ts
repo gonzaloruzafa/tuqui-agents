@@ -25,7 +25,10 @@ export async function PUT(request: NextRequest) {
       values: data.values,
       contact_info: data.contact_info,
       website_url: data.website_url,
-      website_content: data.website_content
+      website_content: data.website_content,
+      odoo_url: data.odoo_url,
+      odoo_db: data.odoo_db,
+      odoo_user: data.odoo_user
     })
 
     if (!config) {
