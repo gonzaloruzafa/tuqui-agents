@@ -20,6 +20,54 @@ export interface AgentConfig {
   }
 }
 
+// Agente general hardcodeado - siempre disponible
+export const GENERAL_AGENT: AgentConfig = {
+  id: 'general-tuqui-chat',
+  slug: 'general',
+  name: 'Tuqui Chat',
+  description: 'Asistente general para cualquier tarea',
+  icon: 'Sparkles',
+  color: 'violet',
+  is_active: true,
+  rag_enabled: false,
+  system_prompt: `Sos Tuqui, un asistente de IA general para empleados de la empresa.
+
+Tu Rol:
+- Ayudar con cualquier tarea o consulta del día a día
+- Redactar textos, emails, documentos
+- Responder preguntas generales
+- Ayudar con análisis, resúmenes y organización de información
+- Dar ideas y sugerencias creativas
+- Explicar conceptos de forma clara
+
+Tu Tono:
+- Amigable y profesional
+- Claro y conciso
+- Proactivo en ofrecer ayuda adicional
+- Usá "vos" (español argentino)
+
+Capacidades:
+- Redacción y corrección de textos
+- Resúmenes y análisis
+- Brainstorming e ideas
+- Explicaciones y tutoriales
+- Organización de información
+- Cálculos y estimaciones básicas
+
+Reglas:
+1. Siempre ofrecé alternativas o mejoras cuando sea posible
+2. Si no sabés algo, decilo honestamente
+3. Usá Markdown para formatear las respuestas cuando sea útil
+4. Sé conciso pero completo`,
+  welcome_message: '¡Hola! Soy Tuqui, tu asistente general. ¿En qué puedo ayudarte hoy?',
+  placeholder_text: 'Preguntame lo que necesites...',
+  features: ['Redacción', 'Análisis', 'Ideas', 'Organización'],
+  prompt: {
+    content: '',
+    version: 1
+  }
+}
+
 // Cache en memoria para evitar llamadas repetidas
 let agentsCache: AgentConfig[] | null = null
 let cacheTimestamp: number = 0
@@ -97,12 +145,33 @@ export async function getAgentsFromDB(): Promise<AgentConfig[]> {
   }
 }
 
+// Obtener todos los agentes incluyendo el general hardcodeado
+export async function getAllAgents(): Promise<AgentConfig[]> {
+  const dbAgents = await getAgentsFromDB()
+  // Agregar el agente general al principio si no está en la DB
+  const hasGeneral = dbAgents.some(a => a.slug === 'general')
+  if (!hasGeneral) {
+    return [GENERAL_AGENT, ...dbAgents]
+  }
+  return dbAgents
+}
+
 export async function getAgentBySlugFromDB(slug: string): Promise<AgentConfig | null> {
+  // Primero verificar si es el agente general hardcodeado
+  if (slug === 'general') {
+    const dbAgents = await getAgentsFromDB()
+    const dbGeneral = dbAgents.find(a => a.slug === 'general')
+    return dbGeneral || GENERAL_AGENT
+  }
   const agents = await getAgentsFromDB()
   return agents.find(a => a.slug === slug) || null
 }
 
 export async function getAgentByIdFromDB(id: string): Promise<AgentConfig | null> {
+  // Verificar si es el ID del agente general hardcodeado
+  if (id === GENERAL_AGENT.id) {
+    return GENERAL_AGENT
+  }
   const agents = await getAgentsFromDB()
   return agents.find(a => a.id === id) || null
 }

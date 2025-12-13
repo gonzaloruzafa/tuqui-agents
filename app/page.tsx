@@ -5,7 +5,7 @@ import {
   GraduationCap, Heart, ShoppingCart, TrendingUp, Wrench,
   FileText, Calculator, Globe, Shield, Zap, Mail
 } from 'lucide-react'
-import { getAgentsFromDB, type AgentConfig } from '@/lib/agents-db'
+import { getAllAgents, type AgentConfig } from '@/lib/agents-db'
 
 // Mapa de iconos de Lucide
 const iconMap: Record<string, React.ReactNode> = {
@@ -83,7 +83,7 @@ export const dynamic = 'force-dynamic' // Disable caching for this page
 export const revalidate = 0
 
 export default async function HomePage() {
-  const agents = await getAgentsFromDB()
+  const agents = await getAllAgents()
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -102,9 +102,35 @@ export default async function HomePage() {
             </p>
           </div>
 
+          {/* Chat General - Destacado */}
+          <Link 
+            href="/chat/general"
+            className="flex items-center gap-4 p-5 mb-6 bg-gradient-to-r from-adhoc-violet to-purple-600 rounded-xl shadow-lg hover:shadow-xl transition-all group"
+          >
+            <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-7 h-7 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-semibold text-white">
+                Tuqui Chat
+              </h3>
+              <p className="text-sm text-white/80">
+                Asistente general para cualquier tarea
+              </p>
+            </div>
+            <ArrowRight className="w-6 h-6 text-white/70 group-hover:text-white group-hover:translate-x-1 transition-all flex-shrink-0" />
+          </Link>
+
+          {/* Separador */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span className="text-xs text-gray-400 font-medium">Agentes especializados</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
+          </div>
+
           {/* Agent List */}
           <div className="space-y-3">
-            {agents.map((agent) => (
+            {agents.filter(a => a.slug !== 'general').map((agent) => (
               <AgentCard key={agent.id} agent={agent} />
             ))}
           </div>
