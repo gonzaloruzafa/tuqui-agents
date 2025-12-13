@@ -2,7 +2,7 @@
 
 export interface ToolParameter {
   name: string
-  type: 'string' | 'number' | 'boolean'
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object'
   description: string
   required: boolean
   default?: any
