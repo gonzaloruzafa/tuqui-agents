@@ -7,7 +7,7 @@ function extractMainContent(html: string, url: string): { title: string; content
   const $ = cheerio.load(html)
   
   // Remover elementos no deseados
-  $('script, style, nav, footer, header, aside, .sidebar, .menu, .navigation, .ad, .ads, .advertisement, iframe, noscript').remove()
+  $('script, style, nav, footer, header, aside, .sidebar, .menu, .navigation, .ad, .ads, .advertisement, iframe, noscript, svg, [aria-hidden="true"]').remove()
   
   // Intentar obtener el título
   let title = $('meta[property="og:title"]').attr('content') 
@@ -17,39 +17,76 @@ function extractMainContent(html: string, url: string): { title: string; content
   
   title = title.trim().substring(0, 200)
   
-  // Intentar obtener el contenido principal
-  let content = ''
+  // Extraer contenido estructurado
+  const contentParts: string[] = []
   
-  // Priorizar selectores comunes de contenido principal
-  const mainSelectors = [
-    'article',
-    'main',
-    '.content',
-    '.post-content',
-    '.entry-content',
-    '.article-content',
-    '#content',
-    '.main-content',
-    '[role="main"]'
-  ]
-  
-  for (const selector of mainSelectors) {
-    const element = $(selector)
-    if (element.length > 0) {
-      content = element.text()
-      break
-    }
+  // Extraer meta descripción
+  const metaDesc = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content')
+  if (metaDesc) {
+    contentParts.push(metaDesc)
   }
   
-  // Fallback: todo el body
-  if (!content || content.trim().length < 100) {
-    content = $('body').text()
+  // Extraer headings con su contexto
+  $('h1, h2, h3').each((_, el) => {
+    const heading = $(el).text().trim()
+    if (heading && heading.length > 3) {
+      contentParts.push(`\n### ${heading}`)
+      // Buscar el siguiente párrafo o texto
+      const nextP = $(el).next('p, div').text().trim()
+      if (nextP && nextP.length > 20) {
+        contentParts.push(nextP.substring(0, 500))
+      }
+    }
+  })
+  
+  // Extraer párrafos principales
+  $('p').each((_, el) => {
+    const text = $(el).text().trim()
+    if (text.length > 50) {
+      contentParts.push(text)
+    }
+  })
+  
+  // Extraer listas
+  $('ul, ol').each((_, el) => {
+    const items: string[] = []
+    $(el).find('li').each((_, li) => {
+      const text = $(li).text().trim()
+      if (text.length > 10) {
+        items.push(`• ${text.substring(0, 200)}`)
+      }
+    })
+    if (items.length > 0) {
+      contentParts.push(items.join('\n'))
+    }
+  })
+  
+  let content = contentParts.join('\n').trim()
+  
+  // Si no encontramos contenido estructurado, fallback al body
+  if (content.length < 200) {
+    // Priorizar selectores comunes de contenido principal
+    const mainSelectors = ['article', 'main', '.content', '.post-content', '.entry-content', '#content', '[role="main"]']
+    
+    for (const selector of mainSelectors) {
+      const element = $(selector)
+      if (element.length > 0 && element.text().trim().length > 200) {
+        content = element.text().trim()
+        break
+      }
+    }
+    
+    // Último fallback: todo el body
+    if (content.length < 200) {
+      content = $('body').text().trim()
+    }
   }
   
   // Limpiar espacios múltiples y líneas vacías
   content = content
     .replace(/\s+/g, ' ')
     .replace(/\n\s*\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
   
   return { title, content }
@@ -183,6 +220,7 @@ export async function POST(request: NextRequest) {
         pages: pages.map(p => ({ 
           url: p.url, 
           title: p.title, 
+          content: p.content.substring(0, 2000), // Limitar contenido por página
           contentLength: p.content.length 
         }))
       })
