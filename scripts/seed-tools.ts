@@ -1,8 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Usar las env vars directamente (asegurate que estén en .env.local)
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zwtvnxhjypomldokssbt.supabase.co'
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3dHZueGhqeXBvbWxkb2tzc2J0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNjE2MiwiZXhwIjoyMDgwMTAyMTYyfQ.E0_My45lH0xMmFvNmdjk8l9pxyEvK3gceMLfUDtUg4A'
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('❌ Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables')
+  process.exit(1)
+}
 
 const seedTools = async () => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
