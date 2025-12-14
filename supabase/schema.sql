@@ -47,7 +47,6 @@ create table if not exists tuqui_agents (
   color text default 'blue',
   is_active boolean default true,
   rag_enabled boolean default false,
-  sort_order integer default 0,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

@@ -193,6 +193,16 @@ Ejemplos:
 - Fechas: \`["campo:period"]\` donde period = month, year, quarter, week, day
 - Relaciones: \`["campo"]\` directo (ej: partner_id, product_id)
 
+⚠️ **LIMITACIÓN IMPORTANTE DE ODOO:**
+NO podés agrupar por campos relacionados con notación punto en groupby.
+- ❌ INCORRECTO: \`["order_id.date_order:month"]\` desde sale.order.line
+- ✅ CORRECTO: Cambiar de modelo a sale.order y agrupar por date_order:month
+
+**Solución cuando necesitás agrupar por fecha desde líneas:**
+1. Cambiar modelo a sale.order
+2. Usar fields con suma de líneas si es posible
+3. O hacer query en sale.order y luego buscar detalles de líneas
+
 Ejemplos:
 \`\`\`json
 # Ventas totales por mes
