@@ -54,5 +54,5 @@ export interface ToolCall {
 }
 
 // Tools builtin disponibles
-export const BUILTIN_TOOLS = ['web_search', 'odoo'] as const
+export const BUILTIN_TOOLS = ['web_search', 'odoo', 'mercadolibre'] as const
 export type BuiltinTool = typeof BUILTIN_TOOLS[number]

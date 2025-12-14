@@ -8,6 +8,7 @@ import { buildRAGContext } from '@/lib/rag'
 import { getAgentTools, generateToolsPrompt, parseToolCall, executeTool } from '@/lib/tools/executor'
 import { getCompanyConfig, generateCompanyContext } from '@/lib/company'
 import { odooTools, generateOdooSystemPrompt } from '@/lib/odoo'
+import { meliTools, generateMeliSystemPrompt } from '@/lib/mercadolibre'
 
 // Configuración del provider Vercel AI SDK para Odoo
 const googleAI = createGoogleGenerativeAI({
@@ -56,11 +57,58 @@ export async function POST(request: NextRequest) {
     // Cargar tools del agente
     const tools = await getAgentTools(agentId)
     
-    // Detectar si el agente tiene la tool de Odoo
+    // Detectar si el agente tiene tools especializadas
     const hasOdooTool = tools.some(t => t.slug === 'odoo')
+    const hasMeliTool = tools.some(t => t.slug === 'mercadolibre')
     
     // =====================================================================
-    // NUEVO FLUJO CON VERCEL AI SDK + TOOLS (para agentes con Odoo)
+    // FLUJO MERCADO LIBRE (Vercel AI SDK + meliTools)
+    // =====================================================================
+    if (hasMeliTool) {
+      console.log('[Chat] Using Vercel AI SDK with MercadoLibre tools for agent:', agentId)
+      
+      // Construir historial en formato Vercel AI SDK
+      const coreMessages = history.map((msg: { role: string; content: string }) => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      }))
+      
+      // Agregar el mensaje actual
+      coreMessages.push({ role: 'user' as const, content: message })
+      
+      // Generar system prompt de MercadoLibre
+      const meliSystemPrompt = generateMeliSystemPrompt()
+      
+      // Usar generateText con tools y multi-step
+      const model = googleAI('gemini-2.0-flash-exp')
+      
+      const result = await generateText({
+        model,
+        system: meliSystemPrompt,
+        messages: coreMessages,
+        tools: meliTools,
+        stopWhen: stepCountIs(5), // Hasta 5 pasos de razonamiento
+        temperature: 0.3,
+      })
+      
+      // Determinar si se usó alguna tool
+      let toolUsed: { name: string; query?: string } | null = null
+      if (result.toolCalls && result.toolCalls.length > 0) {
+        const lastToolCall = result.toolCalls[result.toolCalls.length - 1]
+        toolUsed = {
+          name: 'Consulta Mercado Libre',
+          query: `${lastToolCall.toolName}`
+        }
+      }
+      
+      return NextResponse.json({ 
+        text: result.text, 
+        toolUsed 
+      })
+    }
+    
+    // =====================================================================
+    // FLUJO ODOO (Vercel AI SDK + odooTools)
     // =====================================================================
     if (hasOdooTool) {
       console.log('[Chat] Using Vercel AI SDK with Odoo tools for agent:', agentId)
