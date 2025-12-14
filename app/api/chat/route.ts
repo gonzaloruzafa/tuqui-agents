@@ -1,10 +1,18 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { generateText, stepCountIs } from 'ai'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAgentByIdFromDB } from '@/lib/agents-db'
 import { getAgentById } from '@/lib/agents'
 import { buildRAGContext } from '@/lib/rag'
 import { getAgentTools, generateToolsPrompt, parseToolCall, executeTool } from '@/lib/tools/executor'
 import { getCompanyConfig, generateCompanyContext } from '@/lib/company'
+import { odooTools, generateOdooSystemPrompt } from '@/lib/odoo'
+
+// Configuración del provider Vercel AI SDK para Odoo
+const googleAI = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY || ''
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,6 +53,62 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Cargar tools del agente
+    const tools = await getAgentTools(agentId)
+    
+    // Detectar si el agente tiene la tool de Odoo
+    const hasOdooTool = tools.some(t => t.slug === 'odoo')
+    
+    // =====================================================================
+    // NUEVO FLUJO CON VERCEL AI SDK + TOOLS (para agentes con Odoo)
+    // =====================================================================
+    if (hasOdooTool) {
+      console.log('[Chat] Using Vercel AI SDK with Odoo tools for agent:', agentId)
+      
+      // Construir historial en formato Vercel AI SDK
+      const coreMessages = history.map((msg: { role: string; content: string }) => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      }))
+      
+      // Agregar el mensaje actual
+      coreMessages.push({ role: 'user' as const, content: message })
+      
+      // Generar system prompt con schema de Odoo y fecha actual
+      const odooSystemPrompt = generateOdooSystemPrompt()
+      
+      // Usar generateText con tools y multi-step
+      const model = googleAI('gemini-2.0-flash-exp')
+      
+      const result = await generateText({
+        model,
+        system: odooSystemPrompt,
+        messages: coreMessages,
+        tools: odooTools,
+        stopWhen: stepCountIs(5), // Hasta 5 pasos de razonamiento
+        temperature: 0.3,
+      })
+      
+      // Determinar si se usó alguna tool
+      let toolUsed: { name: string; query?: string } | null = null
+      if (result.toolCalls && result.toolCalls.length > 0) {
+        const lastToolCall = result.toolCalls[result.toolCalls.length - 1]
+        toolUsed = {
+          name: 'Consulta Odoo',
+          query: `${lastToolCall.toolName}`
+        }
+      }
+      
+      return NextResponse.json({ 
+        text: result.text, 
+        toolUsed 
+      })
+    }
+
+    // =====================================================================
+    // FLUJO LEGACY (para agentes sin Odoo)
+    // =====================================================================
+
     // Buscar contexto RAG relevante
     let ragContext = ''
     if (agent?.rag_enabled) {
@@ -58,8 +122,7 @@ export async function POST(request: NextRequest) {
       companyContext = generateCompanyContext(companyConfig)
     }
 
-    // Cargar tools del agente
-    const tools = await getAgentTools(agentId)
+    // Generar prompt de tools (ya tenemos 'tools' cargado arriba)
     const toolsPrompt = generateToolsPrompt(tools)
 
     const genAI = new GoogleGenerativeAI(apiKey)

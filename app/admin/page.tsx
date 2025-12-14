@@ -16,7 +16,6 @@ interface Agent {
   color: string
   is_active: boolean
   rag_enabled: boolean
-  sort_order?: number
   system_prompt?: string
   welcome_message?: string
 }
@@ -1114,16 +1113,6 @@ export default function AdminPage() {
                             type="text"
                             value={formData.color || ''}
                             onChange={e => setFormData({ ...formData, color: e.target.value })}
-                            disabled={!editMode}
-                            className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-50"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Orden</label>
-                          <input
-                            type="number"
-                            value={formData.sort_order ?? 0}
-                            onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) })}
                             disabled={!editMode}
                             className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-50"
                           />
