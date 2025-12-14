@@ -29,16 +29,11 @@ export {
 // Tools Layer (Vercel AI SDK)
 export {
   odooTools,
-  queryOdooTool,
-  countOdooTool,
-  getRecordTool,
-  type QueryOdooParams,
-  type CountOdooParams,
-  type GetRecordParams
+  searchRecordsTool,
+  analyzeDataTool
 } from './tools'
 
 // Prompts
 export {
-  generateOdooSystemPrompt,
-  generateOdooToolsContext
+  generateOdooSystemPrompt
 } from './prompts'

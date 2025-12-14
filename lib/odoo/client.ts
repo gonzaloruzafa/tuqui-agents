@@ -264,6 +264,83 @@ export class OdooClient {
   }
 
   /**
+   * READ_GROUP - Método CRÍTICO para Business Intelligence
+   * Permite hacer agregaciones (SUM, COUNT, AVG) sin traer todos los registros.
+   * 
+   * @example
+   * // Ventas totales por mes
+   * readGroup('sale.order', [['state','=','sale']], ['amount_total:sum'], ['date_order:month'])
+   * 
+   * // Top 5 productos más vendidos
+   * readGroup('sale.order.line', [], ['product_uom_qty:sum'], ['product_id'], 5, 'product_uom_qty desc')
+   * 
+   * @param model - Modelo de Odoo
+   * @param domain - Filtros (igual que search_read)
+   * @param fields - Campos a agregar con función: 'campo:funcion' (sum, count, avg, max, min)
+   * @param groupby - Lista de campos por los que agrupar (soporta :month, :year, :quarter, :week, :day)
+   * @param limit - Límite de grupos a devolver
+   * @param orderby - Ordenamiento (ej: 'amount_total desc')
+   * @param lazy - Si true, agrupa solo por el primer campo (default: true en Odoo)
+   */
+  async readGroup(params: {
+    model: string
+    domain?: any[][]
+    fields: string[]  // Ej: ['amount_total:sum', 'id:count']
+    groupby: string[] // Ej: ['date_order:month', 'partner_id']
+    limit?: number
+    offset?: number
+    orderby?: string
+    lazy?: boolean
+  }): Promise<OdooResponse> {
+    try {
+      console.log('[OdooClient] read_group:', {
+        model: params.model,
+        fields: params.fields,
+        groupby: params.groupby,
+        limit: params.limit
+      })
+
+      const domain = params.domain || []
+      const kwargs: Record<string, any> = {
+        groupby: params.groupby,
+        lazy: params.lazy !== undefined ? params.lazy : true
+      }
+
+      if (params.limit !== undefined) {
+        kwargs.limit = params.limit
+      }
+      if (params.offset !== undefined) {
+        kwargs.offset = params.offset
+      }
+      if (params.orderby) {
+        kwargs.orderby = params.orderby
+      }
+
+      // read_group en Odoo acepta: (domain, fields, groupby, offset, limit, orderby, lazy)
+      const data = await this.execute(
+        params.model,
+        'read_group',
+        [domain, params.fields, params.groupby],
+        kwargs
+      )
+
+      console.log('[OdooClient] read_group returned', Array.isArray(data) ? data.length : 0, 'groups')
+
+      return {
+        success: true,
+        data,
+        count: Array.isArray(data) ? data.length : 0
+      }
+    } catch (error: any) {
+      console.error('[OdooClient] read_group error:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
    * Lee registros específicos por ID
    */
   async read(model: string, ids: number[], fields?: string[]): Promise<OdooResponse> {
