@@ -302,6 +302,7 @@ export class OdooClient {
 
       const domain = params.domain || []
       const kwargs: Record<string, any> = {
+        fields: params.fields,
         groupby: params.groupby,
         lazy: params.lazy !== undefined ? params.lazy : true
       }
@@ -317,10 +318,11 @@ export class OdooClient {
       }
 
       // read_group en Odoo acepta: (domain, fields, groupby, offset, limit, orderby, lazy)
+      // Solo pasamos domain como argumento posicional, el resto como kwargs
       const data = await this.execute(
         params.model,
         'read_group',
-        [domain, params.fields, params.groupby],
+        [domain],
         kwargs
       )
 

@@ -68,6 +68,30 @@ const seedTools = async () => {
         notes: 'Requires ODOO_API_KEY env var and tool config (URL, database, user). Configure in Admin → Tools → Odoo.'
       },
       enabled: true
+    },
+    {
+      slug: 'mercadolibre',
+      name: 'Mercado Libre',
+      description: 'Access Mercado Libre public APIs to research market prices, competitor products, and pricing trends across LATAM. Read-only, no authentication required.',
+      type: 'builtin',
+      parameters: [
+        {
+          name: 'tool',
+          type: 'string',
+          description: 'Tool name: meli_search, meli_item, meli_price_snapshot, or meli_trends',
+          required: true
+        },
+        {
+          name: 'params',
+          type: 'object',
+          description: 'Tool-specific parameters',
+          required: true
+        }
+      ],
+      config: {
+        notes: 'Uses Mercado Libre public APIs. No API key required. Rate limited by ML.'
+      },
+      enabled: true
     }
   ]
 

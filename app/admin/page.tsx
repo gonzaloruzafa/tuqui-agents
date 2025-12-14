@@ -37,7 +37,8 @@ interface AgentTool {
 // Este objeto define los iconos (emoji o imagen)
 const TOOL_ICONS: Record<string, { type: 'emoji' | 'image', value: string }> = {
   web_search: { type: 'emoji', value: '🔍' },
-  odoo: { type: 'image', value: '/odoo.jpeg' }
+  odoo: { type: 'image', value: '/odoo.jpeg' },
+  mercadolibre: { type: 'emoji', value: '💰' }
 }
 
 interface CompanyConfig {
