@@ -16,6 +16,7 @@ interface Agent {
   color: string
   is_active: boolean
   rag_enabled: boolean
+  sort_order?: number
   system_prompt?: string
   welcome_message?: string
 }
@@ -38,7 +39,7 @@ interface AgentTool {
 const TOOL_ICONS: Record<string, { type: 'emoji' | 'image', value: string }> = {
   web_search: { type: 'emoji', value: '🔍' },
   odoo: { type: 'image', value: '/odoo.jpeg' },
-  mercadolibre: { type: 'emoji', value: '💰' }
+  mercadolibre: { type: 'image', value: '/meli-icon.png' }
 }
 
 interface CompanyConfig {
@@ -367,6 +368,7 @@ export default function AdminPage() {
         body: JSON.stringify({
           id: selectedAgent.id,
           ...formData,
+          sortOrder: formData.sort_order,
           systemPrompt: promptData.systemPrompt
         })
       })
@@ -1118,7 +1120,7 @@ export default function AdminPage() {
                             className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-50"
                           />
                         </div>
-                        <div className="col-span-2">
+                        <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                           <textarea
                             value={formData.description || ''}
@@ -1126,6 +1128,17 @@ export default function AdminPage() {
                             disabled={!editMode}
                             rows={2}
                             className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-50"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Orden</label>
+                          <input
+                            type="number"
+                            value={formData.sort_order ?? 0}
+                            onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
+                            disabled={!editMode}
+                            className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-50"
+                            placeholder="0"
                           />
                         </div>
                       </div>

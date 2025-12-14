@@ -43,6 +43,7 @@ export async function getAgentsFromDB(): Promise<AgentConfig[]> {
         color,
         is_active,
         rag_enabled,
+        sort_order,
         tuqui_prompts!inner (
           system_prompt,
           welcome_message,
@@ -57,7 +58,8 @@ export async function getAgentsFromDB(): Promise<AgentConfig[]> {
       `)
       .eq('is_active', true)
       .eq('tuqui_prompts.is_active', true)
-      .order('name')
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true })
 
     if (error) {
       console.error('Error fetching agents:', error)

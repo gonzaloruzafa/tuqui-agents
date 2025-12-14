@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, name, description, icon, color, systemPrompt, ragEnabled } = body
+    const { id, name, description, icon, color, systemPrompt, ragEnabled, sortOrder } = body
 
     if (!id) {
       return NextResponse.json(
@@ -158,6 +158,7 @@ export async function PUT(request: NextRequest) {
     if (icon !== undefined) updateData.icon = icon
     if (color !== undefined) updateData.color = color
     if (ragEnabled !== undefined) updateData.rag_enabled = ragEnabled
+    if (sortOrder !== undefined) updateData.sort_order = sortOrder
 
     const { data: agent, error: agentError } = await supabase
       .from('tuqui_agents')
