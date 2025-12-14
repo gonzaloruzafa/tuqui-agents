@@ -121,7 +121,7 @@ const TrendsSchema = z.object({
 // ============================================================================
 
 /**
- * meli.search_public - Buscar publicaciones
+ * meli_search - Buscar publicaciones
  * 
  * CUÁNDO USAR:
  * - "Buscar productos similares a X"
@@ -137,7 +137,7 @@ CUÁNDO USAR:
 ✅ Comparar precios: "precios de sillas ergonómicas"
 ✅ Investigar mercado: "productos similares a X"
 
-CUÁNDO NO USAR (usar meli.price_snapshot):
+CUÁNDO NO USAR (usar meli_price_snapshot):
 ❌ Analizar rango de precios estadístico
 ❌ Saber percentiles P25/P50/P75
 
@@ -148,7 +148,7 @@ SORTS: relevance (default), price_asc (barato primero), price_desc (caro primero
   inputSchema: SearchPublicSchema,
 
   execute: async (params): Promise<MeliToolResult> => {
-    console.log('[Tool:meli.search_public] Executing:', params)
+    console.log('[Tool:meli_search] Executing:', params)
 
     // Validar sitio
     if (!isValidSite(params.siteId)) {
@@ -206,7 +206,7 @@ SORTS: relevance (default), price_asc (barato primero), price_desc (caro primero
 })
 
 /**
- * meli.get_item - Detalle de publicación
+ * meli_item - Detalle de publicación
  * 
  * CUÁNDO USAR:
  * - "Dame detalles del item MLA123..."
@@ -221,12 +221,12 @@ CUÁNDO USAR:
 ✅ Verificar stock y vendidos
 ✅ Ver tipo de envío
 
-REQUIERE: Un itemId válido (ej: MLA1234567890). Obtenerlo primero con meli.search_public.`,
+REQUIERE: Un itemId válido (ej: MLA1234567890). Obtenerlo primero con meli_search.`,
 
   inputSchema: GetItemSchema,
 
   execute: async (params): Promise<MeliToolResult> => {
-    console.log('[Tool:meli.get_item] Executing:', params)
+    console.log('[Tool:meli_item] Executing:', params)
 
     // Validar formato de itemId
     if (!isValidItemId(params.itemId)) {
@@ -283,7 +283,7 @@ REQUIERE: Un itemId válido (ej: MLA1234567890). Obtenerlo primero con meli.sear
 })
 
 /**
- * meli.price_snapshot - Análisis de precios del mercado
+ * meli_price_snapshot - Análisis de precios del mercado
  * 
  * TOOL CLAVE para decisiones de pricing.
  * Devuelve estadísticas (min, P25, P50, P75, max) de precios.
@@ -310,7 +310,7 @@ INTERPRETACIÓN:
   inputSchema: PriceSnapshotSchema,
 
   execute: async (params): Promise<MeliToolResult> => {
-    console.log('[Tool:meli.price_snapshot] Executing:', params)
+    console.log('[Tool:meli_price_snapshot] Executing:', params)
 
     if (!isValidSite(params.siteId)) {
       return {
@@ -409,7 +409,7 @@ INTERPRETACIÓN:
 })
 
 /**
- * meli.trends - Tendencias de búsqueda
+ * meli_trends - Tendencias de búsqueda
  */
 export const trendsTool = tool({
   description: `Ver TENDENCIAS de búsqueda en Mercado Libre.
@@ -424,7 +424,7 @@ CUÁNDO USAR:
   inputSchema: TrendsSchema,
 
   execute: async (params): Promise<MeliToolResult> => {
-    console.log('[Tool:meli.trends] Executing:', params)
+    console.log('[Tool:meli_trends] Executing:', params)
 
     if (!isValidSite(params.siteId)) {
       return {
