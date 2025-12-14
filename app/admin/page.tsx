@@ -1028,13 +1028,22 @@ export default function AdminPage() {
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-medium">{selectedAgent.name}</h3>
-                        <button
-                          onClick={() => setEditMode(!editMode)}
-                          className="flex items-center gap-2 px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50"
-                        >
-                          {editMode ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
-                          {editMode ? 'Cancelar' : 'Editar'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setEditMode(!editMode)}
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50"
+                          >
+                            {editMode ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
+                            {editMode ? 'Cancelar' : 'Editar'}
+                          </button>
+                          <button
+                            onClick={() => deleteAgent(selectedAgent.id)}
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
