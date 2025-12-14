@@ -59,11 +59,19 @@ const Header = () => (
 )
 
 const Footer = () => (
-  <footer className="bg-white border-t border-gray-100 py-6 mt-auto">
-    <div className="max-w-5xl mx-auto px-4 text-center">
-      <p className="text-xs text-gray-400">
-        © {new Date().getFullYear()} Adhoc S.A. · <a href="https://www.adhoc.inc" target="_blank" rel="noopener noreferrer" className="text-adhoc-violet hover:underline">adhoc.inc</a>
-      </p>
+  <footer className="w-full bg-gray-50 border-t border-gray-200 py-4 mt-auto">
+    <div className="max-w-5xl mx-auto px-4">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-2 text-sm text-gray-500">
+        <p>© {new Date().getFullYear()} Adhoc S.A.</p>
+        <a 
+          href="https://www.adhoc.inc" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="hover:text-adhoc-violet transition-colors"
+        >
+          adhoc.inc
+        </a>
+      </div>
     </div>
   </footer>
 )
