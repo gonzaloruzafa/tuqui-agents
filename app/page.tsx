@@ -58,15 +58,9 @@ const Header = () => (
   </header>
 )
 
-const Footer = () => (
-  <footer className="bg-white border-t border-gray-100 py-6 mt-auto">
-    <div className="max-w-5xl mx-auto px-4 text-center">
-      <p className="text-xs text-gray-400">
-        © {new Date().getFullYear()} Adhoc S.A. · <a href="https://www.adhoc.inc" target="_blank" rel="noopener noreferrer" className="text-adhoc-violet hover:underline">adhoc.inc</a>
-      </p>
-    </div>
-  </footer>
-)
+import FooterComponent from '@/components/Footer'
+
+const Footer = () => <FooterComponent />
 
 const AgentCard = ({ agent }: { agent: AgentConfig }) => (
   <Link 

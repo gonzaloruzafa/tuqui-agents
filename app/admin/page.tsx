@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
   Settings, Plus, Edit2, Trash2, FileText, Save, X, 
-  ChevronLeft, Upload, Eye, ToggleLeft, ToggleRight, Wrench, Globe, Building2 
+  ChevronLeft, Upload, Eye, ToggleLeft, ToggleRight, Wrench, Globe, Building2, Bot, GripVertical 
 } from 'lucide-react'
+import Footer from '@/components/Footer'
 
 interface Agent {
   id: string
@@ -16,6 +17,7 @@ interface Agent {
   color: string
   is_active: boolean
   rag_enabled: boolean
+  sort_order?: number
   system_prompt?: string
   welcome_message?: string
 }
@@ -72,6 +74,8 @@ export default function AdminPage() {
   const [urlInput, setUrlInput] = useState({ url: '', crawl: false, maxPages: 5 })
   const [scrapingUrl, setScrapingUrl] = useState(false)
   const [showNewAgentForm, setShowNewAgentForm] = useState(false)
+  const [draggedAgent, setDraggedAgent] = useState<string | null>(null)
+  const [dragOverAgent, setDragOverAgent] = useState<string | null>(null)
   const [adminView, setAdminView] = useState<'agents' | 'company' | 'tools'>('agents')
   const [tools, setTools] = useState<any[]>([])
   const [selectedTool, setSelectedTool] = useState<any | null>(null)
@@ -559,6 +563,62 @@ export default function AdminPage() {
     }
   }
 
+  // Drag & Drop handlers
+  const handleDragStart = (e: React.DragEvent, agentId: string) => {
+    setDraggedAgent(agentId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent, agentId: string) => {
+    e.preventDefault()
+    setDragOverAgent(agentId)
+  }
+
+  const handleDragLeave = () => {
+    setDragOverAgent(null)
+  }
+
+  const handleDrop = async (e: React.DragEvent, targetAgentId: string) => {
+    e.preventDefault()
+    if (!draggedAgent || draggedAgent === targetAgentId) {
+      setDraggedAgent(null)
+      setDragOverAgent(null)
+      return
+    }
+
+    const draggedIndex = agents.findIndex(a => a.id === draggedAgent)
+    const targetIndex = agents.findIndex(a => a.id === targetAgentId)
+
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    // Reordenar localmente
+    const newAgents = [...agents]
+    const [removed] = newAgents.splice(draggedIndex, 1)
+    newAgents.splice(targetIndex, 0, removed)
+
+    // Actualizar sort_order
+    const updates = newAgents.map((agent, index) => ({
+      id: agent.id,
+      sort_order: index
+    }))
+
+    setAgents(newAgents)
+    setDraggedAgent(null)
+    setDragOverAgent(null)
+
+    // Guardar en backend
+    try {
+      await fetch('/api/agents/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates })
+      })
+    } catch (error) {
+      console.error('Error reordering agents:', error)
+      fetchAgents() // Recargar si falla
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -964,7 +1024,10 @@ export default function AdminPage() {
           <div className="w-64 flex-shrink-0">
             <div className="bg-white rounded-lg border p-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-medium text-gray-700">Agentes</h2>
+                <div className="flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-gray-600" />
+                  <h2 className="font-medium text-gray-700">Agentes</h2>
+                </div>
                 <button 
                   onClick={() => setShowNewAgentForm(true)}
                   className="p-1.5 hover:bg-blue-50 rounded text-blue-600"
@@ -976,18 +1039,34 @@ export default function AdminPage() {
               
               <div className="space-y-1">
                 {agents.map(agent => (
-                  <button
+                  <div
                     key={agent.id}
-                    onClick={() => setSelectedAgent(agent)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                      selectedAgent?.id === agent.id 
-                        ? 'bg-blue-50 text-blue-700' 
-                        : 'hover:bg-gray-50'
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, agent.id)}
+                    onDragOver={(e) => handleDragOver(e, agent.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, agent.id)}
+                    className={`group relative rounded-lg transition-all ${
+                      dragOverAgent === agent.id ? 'border-2 border-blue-400 bg-blue-50/50' : ''
+                    } ${
+                      draggedAgent === agent.id ? 'opacity-50' : ''
                     }`}
                   >
-                    <div className="font-medium text-sm">{agent.name}</div>
-                    <div className="text-xs text-gray-500">/{agent.slug}</div>
-                  </button>
+                    <button
+                      onClick={() => setSelectedAgent(agent)}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                        selectedAgent?.id === agent.id 
+                          ? 'bg-blue-50 text-blue-700' 
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <GripVertical className="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{agent.name}</div>
+                        <div className="text-xs text-gray-500 truncate">/{agent.slug}</div>
+                      </div>
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -1637,6 +1716,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   )
 }
