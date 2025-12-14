@@ -160,6 +160,14 @@ SORTS: relevance (default), price_asc (barato primero), price_desc (caro primero
 
     const client = getMeliClient()
     
+    console.log('[Tool:meli_search] Calling searchItems with:', {
+      siteId: params.siteId,
+      query: params.query,
+      categoryId: params.categoryId,
+      limit: params.limit,
+      sort: params.sort
+    })
+    
     const result = await client.searchItems({
       siteId: params.siteId,
       query: params.query,
@@ -167,6 +175,13 @@ SORTS: relevance (default), price_asc (barato primero), price_desc (caro primero
       limit: params.limit,
       sort: params.sort,
       condition: params.condition
+    })
+
+    console.log('[Tool:meli_search] searchItems result:', {
+      success: result.success,
+      hasData: !!result.data,
+      itemCount: result.data?.items?.length || 0,
+      error: result.error
     })
 
     if (!result.success || !result.data) {
@@ -322,6 +337,14 @@ INTERPRETACIÓN:
     const client = getMeliClient()
     
     // Buscar productos
+    console.log('[Tool:meli_price_snapshot] Calling searchItems with:', {
+      siteId: params.siteId,
+      query: params.query,
+      categoryId: params.categoryId,
+      limit: params.limit,
+      condition: params.condition
+    })
+    
     const result = await client.searchItems({
       siteId: params.siteId,
       query: params.query,
@@ -329,6 +352,13 @@ INTERPRETACIÓN:
       limit: params.limit,
       condition: params.condition,
       sort: 'relevance'
+    })
+
+    console.log('[Tool:meli_price_snapshot] searchItems result:', { 
+      success: result.success, 
+      hasData: !!result.data,
+      itemCount: result.data?.items?.length || 0,
+      error: result.error
     })
 
     if (!result.success || !result.data) {
