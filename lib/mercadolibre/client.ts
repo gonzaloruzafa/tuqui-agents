@@ -149,10 +149,18 @@ export class MeliPublicClient {
   private readonly cache = new SimpleCache()
   private readonly timeout: number
   private readonly maxRetries: number
+  private readonly accessToken: string | null
 
   constructor(options?: { timeout?: number; maxRetries?: number }) {
     this.timeout = options?.timeout || 8000
     this.maxRetries = options?.maxRetries || 2
+    this.accessToken = process.env.MELI_ACCESS_TOKEN || null
+    
+    if (this.accessToken) {
+      console.log('[MeliClient] Using OAuth access token from env')
+    } else {
+      console.log('[MeliClient] No access token found - API calls may be limited')
+    }
   }
 
   /**
@@ -193,12 +201,20 @@ export class MeliPublicClient {
 
         console.log(`[MeliClient] GET ${path} (attempt ${attempt}/${this.maxRetries})`)
 
+        const headers: Record<string, string> = {
+          'Accept': 'application/json',
+          'User-Agent': 'TuquiAgents/1.0'
+        }
+
+        // Agregar access token si está disponible
+        if (this.accessToken) {
+          headers['Authorization'] = `Bearer ${this.accessToken}`
+          console.log('[MeliClient] Using OAuth token')
+        }
+
         const response = await fetch(url.toString(), {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'TuquiAgents/1.0'
-          },
+          headers,
           signal: controller.signal
         })
 
@@ -214,9 +230,16 @@ export class MeliPublicClient {
 
         // 403 Forbidden - explicar certificación
         if (response.status === 403) {
+          const errorBody = await response.text().catch(() => '')
+          if (this.accessToken) {
+            return {
+              success: false,
+              error: `⚠️ ML API bloqueada - Token válido pero endpoint requiere permisos adicionales. Revisá scopes en ML Developer Portal (App ID: ${process.env.MELI_CLIENT_ID})`
+            }
+          }
           return {
             success: false,
-            error: `⚠️ ML API bloqueada - Requiere app certificada. Contactá a ML Developers para certificar App ID ${process.env.MELI_CLIENT_ID || '(no configurado)'}`
+            error: `⚠️ ML API bloqueada - Requiere OAuth token o app certificada. Error: ${errorBody.substring(0, 150)}`
           }
         }
 
