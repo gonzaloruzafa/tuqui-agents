@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       const meliSystemPrompt = generateMeliSystemPrompt()
       
       // Usar generateText con tools y multi-step
-      const model = googleAI('gemini-2.0-flash-exp')
+      const model = googleAI('gemini-2.5-flash')
       
       const result = await generateText({
         model,
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       const odooSystemPrompt = generateOdooSystemPrompt()
       
       // Usar generateText con tools y multi-step
-      const model = googleAI('gemini-2.0-flash-exp')
+      const model = googleAI('gemini-2.5-flash')
       
       const result = await generateText({
         model,

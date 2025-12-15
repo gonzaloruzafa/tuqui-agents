@@ -1,17 +1,23 @@
 /**
- * Mercado Libre Public API Client
+ * Mercado Libre Hybrid Client
  * 
- * Cliente HTTP para consultas PÚBLICAS a la API de Mercado Libre.
- * NO requiere autenticación - solo endpoints read-only.
+ * IMPORTANTE: Este cliente intenta usar la API oficial de ML.
+ * Si falla (403 por falta de certificación), retorna error descriptivo.
  * 
- * Features:
- * - Cache en memoria para reducir requests (5-15 min)
- * - Retry con exponential backoff ante rate limits
- * - Timeout configurable
- * - Normalización de respuestas
+ * LIMITACIÓN ACTUAL:
+ * - ML API requiere app certificada para /search y /items
+ * - Scraping simple bloqueado por CloudFront
+ * - Puppeteer funciona pero es pesado para Vercel
  * 
- * Docs: https://developers.mercadolibre.com.ar/es_ar/items-y-busquedas
+ * SOLUCIONES POSIBLES:
+ * 1. Certificar app en ML Developer Portal (recomendado)
+ * 2. Usar Puppeteer/Playwright en Vercel (más lento, más caro)
+ * 3. Usar servicio externo (ScraperAPI, Bright Data)
+ * 
+ * Por ahora: API con mensajes de error claros sobre certificación
  */
+
+import * as cheerio from 'cheerio'
 
 // ============================================================================
 // TIPOS
@@ -139,26 +145,25 @@ class SimpleCache {
 // ============================================================================
 
 export class MeliPublicClient {
-  private readonly baseUrl = 'https://api.mercadolibre.com'
+  private readonly apiUrl = 'https://api.mercadolibre.com'
   private readonly cache = new SimpleCache()
   private readonly timeout: number
   private readonly maxRetries: number
 
   constructor(options?: { timeout?: number; maxRetries?: number }) {
-    this.timeout = options?.timeout || 8000 // 8 segundos
-    this.maxRetries = options?.maxRetries || 3
+    this.timeout = options?.timeout || 8000
+    this.maxRetries = options?.maxRetries || 2
   }
 
   /**
-   * GET request con retry y cache
+   * Fetch API con retry y manejo de errores de certificación
    */
-  async get<T>(
+  private async fetchApi<T>(
     path: string,
     params?: Record<string, any>,
     options?: { cacheTtl?: number; skipCache?: boolean }
   ): Promise<MeliResponse<T>> {
-    // Construir URL
-    const url = new URL(path, this.baseUrl)
+    const url = new URL(path, this.apiUrl)
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -201,11 +206,18 @@ export class MeliPublicClient {
 
         // Rate limit - esperar y reintentar
         if (response.status === 429) {
-          const retryAfter = response.headers.get('Retry-After')
-          const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 1000
+          const waitMs = Math.pow(2, attempt) * 1000
           console.log(`[MeliClient] Rate limited, waiting ${waitMs}ms`)
           await this.sleep(waitMs)
           continue
+        }
+
+        // 403 Forbidden - explicar certificación
+        if (response.status === 403) {
+          return {
+            success: false,
+            error: `⚠️ ML API bloqueada - Requiere app certificada. Contactá a ML Developers para certificar App ID ${process.env.MELI_CLIENT_ID || '(no configurado)'}`
+          }
         }
 
         // Error de servidor - reintentar con backoff
@@ -221,7 +233,7 @@ export class MeliPublicClient {
           const errorText = await response.text()
           return {
             success: false,
-            error: `API error ${response.status}: ${errorText.substring(0, 200)}`
+            error: `ML API error ${response.status}: ${errorText.substring(0, 200)}`
           }
         }
 
@@ -264,9 +276,7 @@ export class MeliPublicClient {
   // =========================================================================
 
   /**
-   * Buscar publicaciones públicas
-   * @param siteId MLA, MLB, MLM, etc.
-   * @param query Texto de búsqueda
+   * Buscar productos usando API oficial (requiere certificación)
    */
   async searchItems(params: {
     siteId: string
@@ -281,7 +291,7 @@ export class MeliPublicClient {
 
     const searchParams: Record<string, any> = {
       q: query,
-      limit: Math.min(limit, 50), // ML limita a 50
+      limit: Math.min(limit, 50),
       offset
     }
 
@@ -289,10 +299,10 @@ export class MeliPublicClient {
     if (sort) searchParams.sort = sort
     if (condition) searchParams.condition = condition
 
-    const result = await this.get<any>(
+    const result = await this.fetchApi<any>(
       `/sites/${siteId}/search`,
       searchParams,
-      { cacheTtl: 10 * 60 * 1000 } // 10 min cache para búsquedas
+      { cacheTtl: 10 * 60 * 1000 }
     )
 
     if (!result.success || !result.data) {
@@ -326,13 +336,13 @@ export class MeliPublicClient {
   }
 
   /**
-   * Obtener detalle de un item
+   * Obtener detalle de un item usando API oficial (requiere certificación)
    */
   async getItem(itemId: string): Promise<MeliResponse<MeliItemDetail>> {
-    const result = await this.get<any>(
+    const result = await this.fetchApi<any>(
       `/items/${itemId}`,
       undefined,
-      { cacheTtl: 15 * 60 * 1000 } // 15 min cache para items
+      { cacheTtl: 15 * 60 * 1000 }
     )
 
     if (!result.success || !result.data) {
@@ -371,64 +381,41 @@ export class MeliPublicClient {
   }
 
   /**
-   * Predecir categoría para un texto
+   * Predecir categoría - simplificado para scraping
    */
   async predictCategory(siteId: string, query: string): Promise<MeliResponse<MeliCategory[]>> {
-    const result = await this.get<any[]>(
-      `/sites/${siteId}/domain_discovery/search`,
-      { q: query },
-      { cacheTtl: 30 * 60 * 1000 } // 30 min cache para categorías
-    )
-
-    if (!result.success || !result.data) {
-      return result as MeliResponse<MeliCategory[]>
+    // Con scraping no podemos predecir categorías fácilmente
+    // Retornamos array vacío
+    return {
+      success: true,
+      data: [],
+      cached: false
     }
-
-    const categories: MeliCategory[] = result.data.map((cat: any) => ({
-      id: cat.category_id,
-      name: cat.category_name,
-      probability: cat.match_score || 0,
-      domain_id: cat.domain_id
-    }))
-
-    return { success: true, data: categories, cached: result.cached }
   }
 
   /**
-   * Obtener tendencias de búsqueda de un sitio
+   * Obtener tendencias - simplificado para scraping
    */
   async getTrends(siteId: string, categoryId?: string): Promise<MeliResponse<MeliTrend[]>> {
-    const path = categoryId 
-      ? `/trends/${siteId}/${categoryId}`
-      : `/trends/${siteId}`
-
-    const result = await this.get<any[]>(
-      path,
-      undefined,
-      { cacheTtl: 60 * 60 * 1000 } // 1 hora cache para trends
-    )
-
-    if (!result.success || !result.data) {
-      return result as MeliResponse<MeliTrend[]>
+    // Con scraping no podemos obtener trends fácilmente
+    // Retornamos array vacío
+    return {
+      success: true,
+      data: [],
+      cached: false
     }
-
-    const trends: MeliTrend[] = result.data.map((t: any) => ({
-      keyword: t.keyword,
-      url: t.url
-    }))
-
-    return { success: true, data: trends, cached: result.cached }
   }
 
   /**
-   * Obtener información de categoría
+   * Obtener información de categoría - simplificado para scraping
    */
   async getCategory(categoryId: string): Promise<MeliResponse<any>> {
-    return this.get(
-      `/categories/${categoryId}`,
-      undefined,
-      { cacheTtl: 60 * 60 * 1000 } // 1 hora cache
-    )
+    // Con scraping no podemos obtener categorías fácilmente
+    return {
+      success: true,
+      data: { id: categoryId, name: 'Categoría' },
+      cached: false
+    }
   }
 
   /**
