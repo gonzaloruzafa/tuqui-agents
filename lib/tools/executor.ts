@@ -2,7 +2,6 @@ import { ToolConfig, ToolResult, BUILTIN_TOOLS } from './types'
 import { supabaseAdmin } from '@/lib/supabase'
 import { searchWeb, tavilyToolConfig } from './tavily'
 import { queryOdoo, odooToolConfig } from './odoo'
-import { executeMercadoLibreTool, mercadolibreToolConfig } from './mercadolibre-executor'
 
 // Ejecutar un tool basado en su configuración
 export async function executeTool(
@@ -17,9 +16,8 @@ export async function executeTool(
     if (toolSlug === 'odoo') {
       return await queryOdoo(params as any)
     }
-    if (toolSlug === 'mercadolibre') {
-      return await executeMercadoLibreTool(params as any)
-    }
+    // MercadoLibre ahora usa tools directos de Vercel AI SDK
+    // Ver lib/mercadolibre/tools.ts
 
     // Si no es builtin, buscar en la DB
     const config = await getToolConfig(toolSlug)
@@ -170,9 +168,8 @@ export async function getAgentTools(agentId: string): Promise<ToolConfig[]> {
   if (enabledSlugs.includes('odoo') && !dbSlugs.includes('odoo')) {
     tools.push(odooToolConfig)
   }
-  if (enabledSlugs.includes('mercadolibre') && !dbSlugs.includes('mercadolibre')) {
-    tools.push(mercadolibreToolConfig)
-  }
+  // MercadoLibre ahora usa tools directos de Vercel AI SDK
+  // Ver lib/mercadolibre/tools.ts - se registran automáticamente
 
   return tools
 }

@@ -17,6 +17,68 @@ import { getOdooClient } from './client'
 import { isValidModel, getValidFields } from './schema'
 
 // ============================================================================
+// UTILIDADES DE FORMATO
+// ============================================================================
+
+/**
+ * Formatea números enteros con separador de miles (punto)
+ * Ejemplo: 25820 → "25.820"
+ */
+function formatInteger(num: number | string): string {
+  const n = typeof num === 'string' ? parseFloat(num) : num
+  if (isNaN(n)) return String(num)
+  return Math.round(n).toLocaleString('es-AR', { useGrouping: true })
+}
+
+/**
+ * Formatea montos en pesos argentinos
+ * Ejemplo: 3619891.7 → "$3.619.891,70"
+ */
+function formatCurrency(amount: number | string): string {
+  const n = typeof amount === 'string' ? parseFloat(amount) : amount
+  if (isNaN(n)) return String(amount)
+  return n.toLocaleString('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
+/**
+ * Formatea decimales no monetarios
+ * Ejemplo: 118.8 → "118,80"
+ */
+function formatDecimal(num: number | string, decimals: number = 2): string {
+  const n = typeof num === 'string' ? parseFloat(num) : num
+  if (isNaN(n)) return String(num)
+  return n.toLocaleString('es-AR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  })
+}
+
+/**
+ * Extrae el nombre de un Many2one [id, "Nombre"]
+ */
+function extractMany2oneName(field: any): string {
+  if (Array.isArray(field) && field.length === 2) {
+    return String(field[1])
+  }
+  return String(field)
+}
+
+/**
+ * Formatea una fecha ISO a DD/MM/YYYY
+ */
+function formatDate(dateStr: string): string {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return dateStr
+  return date.toLocaleDateString('es-AR')
+}
+
+// ============================================================================
 // TIPOS
 // ============================================================================
 

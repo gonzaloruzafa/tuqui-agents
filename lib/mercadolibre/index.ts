@@ -1,20 +1,23 @@
 /**
- * Mercado Libre Module Index
+ * MercadoLibre Module Index
  * 
- * Exporta todos los componentes del módulo Mercado Libre
+ * ARQUITECTURA: Local Server / VPS con Puppeteer Stealth
+ * 
+ * Módulos:
+ * - browser-client: Puppeteer con stealth para scraping
+ * - tools: Herramientas para Vercel AI SDK
+ * - schema: Tipos y utilidades
+ * - prompts: Prompts del agente
  */
 
-// Client Layer
+// Browser Client (Puppeteer Stealth)
 export {
-  MeliPublicClient,
-  getMeliClient,
-  type MeliResponse,
-  type MeliSearchResult,
-  type MeliItemDetail,
-  type MeliSearchResponse,
-  type MeliCategory,
-  type MeliTrend
-} from './client'
+  getMeliBrowserClient,
+  searchProducts,
+  getProductByUrl,
+  type ProductResult,
+  type SearchResult
+} from './browser-client'
 
 // Schema Layer
 export {
@@ -38,17 +41,15 @@ export {
 // Tools Layer (Vercel AI SDK)
 export {
   meliTools,
-  searchPublicTool,
-  getItemTool,
-  priceSnapshotTool,
-  trendsTool,
-  type SearchPublicParams,
-  type GetItemParams,
-  type PriceSnapshotParams,
-  type TrendsParams
+  searchTool,
+  priceAnalysisTool,
+  productDetailsTool
 } from './tools'
 
 // Prompts
 export {
   generateMeliSystemPrompt
 } from './prompts'
+
+// Default export
+export { default as MeliBrowserClient } from './browser-client'

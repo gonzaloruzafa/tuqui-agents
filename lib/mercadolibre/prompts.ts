@@ -4,6 +4,11 @@
  * El "Cerebro" del agente de MercadoLibre.
  * Diseñado para ayudar a vendedores a tomar decisiones de pricing.
  * 
+ * ARQUITECTURA: Tavily + Jina Reader + JSON-LD (Smart Scraping)
+ * - Tavily: Discovery de URLs de productos
+ * - Jina Reader: Extracción de contenido (GRATIS)
+ * - JSON-LD: Precios exactos de Schema.org
+ * 
  * IMPORTANTE: Este agente es READ-ONLY.
  * Solo consulta datos públicos, no modifica publicaciones.
  */
@@ -16,38 +21,37 @@ import { generateMeliDocumentation } from './schema'
 const TOOL_DECISION_GUIDE = `
 ## 🛠️ DECISIÓN DE TOOL
 
-### meli_search - Buscar publicaciones
+### meli_search - Búsqueda rápida
 ✅ USAR cuando el usuario quiere:
 - Ver qué hay publicado de un producto
-- Buscar competidores
-- Explorar un nicho/categoría
-- Comparar productos
+- Búsqueda exploratoria inicial
+- Lista rápida de productos
 
-### meli_item - Detalle de item
-✅ USAR cuando:
-- Tenés un itemId específico (MLA123...)
-- Necesitás ver atributos/especificaciones
-- Verificar stock exacto de un competidor
-
-❌ REQUIERE itemId previo (de una búsqueda)
-
-### meli_price_snapshot - ANÁLISIS DE PRECIOS (PRINCIPAL)
+### meli_price_snapshot - ANÁLISIS DE PRECIOS
 ✅ USAR cuando el usuario pregunta:
 - "¿A cuánto vender X?"
 - "¿Estoy caro/barato?"
 - "Rango de precios de Y"
-- "Análisis de competencia"
+- "Análisis rápido de competencia"
 
 DEVUELVE estadísticas:
 - P25: Precio agresivo (volumen)
 - P50: Precio mercado (equilibrado)
 - P75: Precio premium (margen)
 
-### meli_trends - Tendencias
-✅ USAR para:
-- Ver qué se busca mucho
-- Descubrir oportunidades
-- Ideas de productos
+### meli_deep_research - INVESTIGACIÓN PROFUNDA ⭐ RECOMENDADO
+✅ USAR cuando el usuario necesita:
+- "Investiga el mercado de X"
+- "Análisis completo de Y"
+- "Compara vendedores y envíos"
+- Datos en tiempo real muy precisos
+- Información de vendedores y reputación
+- Tipos de envío (FULL, gratis, etc)
+
+Esta es la herramienta más potente. Usa Smart Scraping:
+- Tavily encuentra las URLs de productos
+- Jina Reader obtiene el contenido (gratis)
+- JSON-LD extrae precios EXACTOS de Schema.org
 `
 
 /**

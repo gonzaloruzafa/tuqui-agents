@@ -8,7 +8,7 @@ import { buildRAGContext } from '@/lib/rag'
 import { getAgentTools, generateToolsPrompt, parseToolCall, executeTool } from '@/lib/tools/executor'
 import { getCompanyConfig, generateCompanyContext } from '@/lib/company'
 import { odooTools, generateOdooSystemPrompt } from '@/lib/odoo'
-import { meliTools, generateMeliSystemPrompt } from '@/lib/mercadolibre'
+// MercadoLibre tools se cargan dinámicamente (Puppeteer no compatible con Edge)
 
 // Configuración del provider Vercel AI SDK para Odoo
 const googleAI = createGoogleGenerativeAI({
@@ -62,95 +62,92 @@ export async function POST(request: NextRequest) {
     const hasMeliTool = tools.some(t => t.slug === 'mercadolibre')
     
     // =====================================================================
-    // FLUJO MERCADO LIBRE (Vercel AI SDK + meliTools)
+    // FLUJO COMBINADO (Odoo + MercadoLibre) o individual
     // =====================================================================
-    if (hasMeliTool) {
-      console.log('[Chat] Using Vercel AI SDK with MercadoLibre tools for agent:', agentId)
+    if (hasOdooTool || hasMeliTool) {
+      console.log('[Chat] Using Vercel AI SDK with tools for agent:', agentId, { hasOdooTool, hasMeliTool })
       
-      // Construir historial en formato Vercel AI SDK
-      const coreMessages = history.map((msg: { role: string; content: string }) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content
-      }))
-      
-      // Agregar el mensaje actual
-      coreMessages.push({ role: 'user' as const, content: message })
-      
-      // Generar system prompt de MercadoLibre
-      const meliSystemPrompt = generateMeliSystemPrompt()
-      
-      // Usar generateText con tools y multi-step
-      const model = googleAI('gemini-2.5-flash')
-      
-      const result = await generateText({
-        model,
-        system: meliSystemPrompt,
-        messages: coreMessages,
-        tools: meliTools,
-        stopWhen: stepCountIs(5), // Hasta 5 pasos de razonamiento
-        temperature: 0.3,
-      })
-      
-      // Determinar si se usó alguna tool
-      let toolUsed: { name: string; query?: string } | null = null
-      if (result.toolCalls && result.toolCalls.length > 0) {
-        const lastToolCall = result.toolCalls[result.toolCalls.length - 1]
-        toolUsed = {
-          name: 'Consulta Mercado Libre',
-          query: `${lastToolCall.toolName}`
+      try {
+        // Construir historial en formato Vercel AI SDK
+        const coreMessages = history.map((msg: { role: string; content: string }) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content
+        }))
+        
+        // Agregar el mensaje actual
+        coreMessages.push({ role: 'user' as const, content: message })
+        
+        // Combinar tools y system prompts
+        let combinedTools: Record<string, any> = {}
+        let combinedSystemPrompt = ''
+        
+        // Agregar Odoo tools si está habilitado
+        if (hasOdooTool) {
+          const odooSystemPrompt = generateOdooSystemPrompt()
+          combinedSystemPrompt += `## HERRAMIENTAS ODOO (datos internos de tu empresa)\n\n${odooSystemPrompt}\n\n`
+          combinedTools = { ...combinedTools, ...odooTools }
         }
-      }
-      
-      return NextResponse.json({ 
-        text: result.text, 
-        toolUsed 
-      })
-    }
-    
-    // =====================================================================
-    // FLUJO ODOO (Vercel AI SDK + odooTools)
-    // =====================================================================
-    if (hasOdooTool) {
-      console.log('[Chat] Using Vercel AI SDK with Odoo tools for agent:', agentId)
-      
-      // Construir historial en formato Vercel AI SDK
-      const coreMessages = history.map((msg: { role: string; content: string }) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content
-      }))
-      
-      // Agregar el mensaje actual
-      coreMessages.push({ role: 'user' as const, content: message })
-      
-      // Generar system prompt con schema de Odoo y fecha actual
-      const odooSystemPrompt = generateOdooSystemPrompt()
-      
-      // Usar generateText con tools y multi-step
-      const model = googleAI('gemini-2.5-flash')
-      
-      const result = await generateText({
-        model,
-        system: odooSystemPrompt,
-        messages: coreMessages,
-        tools: odooTools,
-        stopWhen: stepCountIs(5), // Hasta 5 pasos de razonamiento
-        temperature: 0.3,
-      })
-      
-      // Determinar si se usó alguna tool
-      let toolUsed: { name: string; query?: string } | null = null
-      if (result.toolCalls && result.toolCalls.length > 0) {
-        const lastToolCall = result.toolCalls[result.toolCalls.length - 1]
-        toolUsed = {
-          name: 'Consulta Odoo',
-          query: `${lastToolCall.toolName}`
+        
+        // Agregar MercadoLibre tools si está habilitado
+        if (hasMeliTool) {
+          const { meliTools, generateMeliSystemPrompt } = await import('@/lib/mercadolibre')
+          const meliSystemPrompt = generateMeliSystemPrompt()
+          combinedSystemPrompt += `## HERRAMIENTAS MERCADO LIBRE (marketplace público)\n\n${meliSystemPrompt}\n\n`
+          combinedTools = { ...combinedTools, ...meliTools }
         }
+        
+        // Si tiene ambas tools, agregar instrucciones de decisión
+        if (hasOdooTool && hasMeliTool) {
+          combinedSystemPrompt = `Sos un asistente de negocios con acceso a DOS sistemas:
+
+1. **ODOO** (ERP interno): Datos de TU empresa - ventas, compras, stock, clientes, facturas, productos propios
+2. **MERCADO LIBRE** (marketplace): Datos PÚBLICOS del mercado - precios de competencia, productos de terceros
+
+## REGLA DE DECISIÓN - MUY IMPORTANTE
+
+Cuando el usuario pregunte:
+- "vendimos", "compramos", "nuestras ventas", "mi empresa", "stock", "facturación" → Usar tools de **ODOO**
+- "buscar en mercado libre", "precios de mercado", "competencia", "¿a cuánto vender?", "productos en MELI" → Usar tools de **MERCADO LIBRE**
+- Si no está claro, PREGUNTAR al usuario si se refiere a datos internos (Odoo) o del mercado (MercadoLibre)
+
+` + combinedSystemPrompt
+        }
+        
+        // Usar generateText con todas las tools combinadas
+        const model = googleAI('gemini-2.5-flash')
+        
+        const result = await generateText({
+          model,
+          system: combinedSystemPrompt,
+          messages: coreMessages,
+          tools: combinedTools,
+          stopWhen: stepCountIs(5),
+          temperature: 0.3,
+        })
+        
+        // Determinar si se usó alguna tool
+        let toolUsed: { name: string; query?: string } | null = null
+        if (result.toolCalls && result.toolCalls.length > 0) {
+          const lastToolCall = result.toolCalls[result.toolCalls.length - 1]
+          const toolName = lastToolCall.toolName
+          const isOdooTool = toolName.startsWith('search_') || toolName.startsWith('analyze_')
+          toolUsed = {
+            name: isOdooTool ? 'Consulta Odoo' : 'Consulta Mercado Libre',
+            query: toolName
+          }
+        }
+        
+        return NextResponse.json({ 
+          text: result.text, 
+          toolUsed 
+        })
+      } catch (error: any) {
+        console.error('[Chat] Error with tools:', error)
+        return NextResponse.json({ 
+          text: 'Lo siento, hubo un error al procesar tu consulta. Por favor, intentá de nuevo.',
+          error: error.message 
+        }, { status: 500 })
       }
-      
-      return NextResponse.json({ 
-        text: result.text, 
-        toolUsed 
-      })
     }
 
     // =====================================================================

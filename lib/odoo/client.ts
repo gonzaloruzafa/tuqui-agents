@@ -128,6 +128,8 @@ export class OdooClient {
         {}
       ])
 
+      console.log('[OdooClient] Raw auth response:', JSON.stringify(result, null, 2))
+
       if (result.error) {
         console.error('[OdooClient] Auth error:', result.error)
         return false
@@ -135,6 +137,7 @@ export class OdooClient {
 
       if (!result.result || typeof result.result !== 'number') {
         console.error('[OdooClient] Invalid UID:', result.result)
+        console.error('[OdooClient] Full response:', JSON.stringify(result, null, 2))
         return false
       }
 

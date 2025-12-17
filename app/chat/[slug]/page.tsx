@@ -638,11 +638,11 @@ export default function ChatPage() {
                   >
                     {msg.role === 'assistant' ? (
                       // Assistant message - left aligned, no bubble
-                      <div className="flex gap-3 max-w-[85%] group">
+                      <div className="flex gap-3 w-full group">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-adhoc-lavender flex items-center justify-center">
                           {getAgentIcon(agent.icon, 'md', 'text-adhoc-violet')}
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 overflow-x-auto">
                           {/* Tool used indicator */}
                           {msg.toolUsed && (
                             <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">

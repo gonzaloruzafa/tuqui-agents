@@ -154,22 +154,78 @@ body {
   border-collapse: collapse;
   width: 100%;
   margin: 1em 0;
+  table-layout: auto;
+  font-size: 0.9em;
 }
 
 .bot-message th, .bot-message td {
   border: 1px solid #e5e7eb;
-  padding: 0.5em 1em;
+  padding: 0.6em 0.8em;
   text-align: left;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 300px;
 }
 
 .bot-message th {
   background: #f9fafb;
   font-weight: 600;
   color: #111827;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 .bot-message td {
   color: #374151;
+  line-height: 1.5;
+}
+
+/* Alineación de columnas según contenido */
+.bot-message td:nth-child(1) {
+  text-align: left;
+  font-weight: 500;
+}
+
+/* Columnas numéricas - derecha */
+.bot-message td:nth-child(2),
+.bot-message td:nth-child(3),
+.bot-message td:nth-child(4) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  white-space: nowrap;
+}
+
+/* Encabezados de columnas numéricas */
+.bot-message th:nth-child(2),
+.bot-message th:nth-child(3),
+.bot-message th:nth-child(4) {
+  text-align: right;
+}
+
+/* Primera columna más ancha para nombres/descripciones */
+.bot-message td:first-child,
+.bot-message th:first-child {
+  min-width: 200px;
+}
+
+/* Responsive: en mobile, hacer la tabla scrollable */
+@media (max-width: 768px) {
+  .bot-message table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .bot-message td,
+  .bot-message th {
+    white-space: nowrap;
+    max-width: none;
+  }
 }
 
 /* Animation for loading dots */
