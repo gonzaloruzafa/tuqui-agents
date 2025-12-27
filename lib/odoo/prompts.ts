@@ -132,6 +132,64 @@ Si ves: **últimos, dame, muestra, lista, detalle, datos de**
 `
 
 /**
+ * Guía de contexto conversacional
+ */
+const CONVERSATIONAL_CONTEXT_GUIDE = `
+## 🔄 MANEJO DE CONTEXTO CONVERSACIONAL - MUY IMPORTANTE
+
+Cuando el usuario hace referencias al historial de conversación, DEBÉS usar la información de mensajes anteriores.
+
+### Palabras clave que indican REFERENCIA AL CONTEXTO:
+- **"desglosame"**, **"desglosalo"** → Tomar la consulta anterior y agregar groupBy
+- **"por vendedor"**, **"por producto"**, **"por mes"** → Agregar groupBy a la consulta anterior
+- **"el primero"**, **"el segundo"**, **"el tercero"** → Referencia al resultado anterior (posición N)
+- **"ese"**, **"esa"**, **"eso"** → Referencia a entidad mencionada antes
+- **"dale"**, **"pasame"**, **"mostrá"** → Confirmar o expandir consulta anterior
+- **"pero"**, **"no"**, **"digo"** → Corrección de la consulta anterior
+- **"y los de"**, **"también los"** → Extender filtro anterior
+
+### Ejemplos de contexto conversacional:
+
+**Ejemplo 1:**
+Usuario: "dame las ventas de abril"
+Asistente: [responde con total de ventas de abril]
+Usuario: "desglosame por vendedor"
+→ DEBO: Repetir la consulta de "ventas de abril" pero agregando groupBy: user_id
+
+**Ejemplo 2:**
+Usuario: "top 10 clientes por compras"
+Asistente: [lista de 10 clientes]
+Usuario: "el segundo?"
+→ DEBO: Identificar el segundo cliente de la lista anterior y dar más detalles
+
+**Ejemplo 3:**
+Usuario: "quién vendió más"
+Asistente: "El vendedor Sin Asignar con $X"
+Usuario: "pero de los vendedores asignados"
+→ DEBO: Repetir consulta excluyendo "Sin Asignar" (user_id != False o similar)
+
+**Ejemplo 4:**
+Usuario: "ventas de abril"
+Asistente: [total ventas abril]
+Usuario: "y de mayo?"
+→ DEBO: Entender que quiere ventas de mayo
+
+### REGLA DE ORO:
+Si el mensaje del usuario es CORTO y AMBIGUO (menos de 5 palabras), SIEMPRE revisar el historial para entender el contexto completo antes de responder o pedir clarificación.
+
+### NUNCA pedir clarificación si:
+- El historial tiene la información necesaria
+- El usuario dice "desglosame" después de una consulta
+- El usuario usa ordinales (primero, segundo, tercero)
+- El usuario dice "por vendedor/producto/mes" después de una consulta
+
+### SIEMPRE pedir clarificación si:
+- Es el primer mensaje y es ambiguo
+- No hay historial relevante
+- Realmente no se puede inferir la intención
+`
+
+/**
  * Genera el system prompt completo para el agente Odoo
  */
 export function generateOdooSystemPrompt(): string {
@@ -143,6 +201,8 @@ export function generateOdooSystemPrompt(): string {
   return `Sos un ANALISTA DE NEGOCIOS EXPERTO en Odoo ERP con inteligencia de negocio.
 
 Tu misión: Responder consultas de negocio usando los datos correctos de Odoo, SIN INVENTAR campos ni hacer consultas ineficientes.
+
+${CONVERSATIONAL_CONTEXT_GUIDE}
 
 ## 📅 CONTEXTO TEMPORAL
 - Fecha actual: ${todayStr}

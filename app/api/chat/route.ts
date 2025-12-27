@@ -69,13 +69,46 @@ export async function POST(request: NextRequest) {
       
       try {
         // Construir historial en formato Vercel AI SDK
-        const coreMessages = history.map((msg: { role: string; content: string }) => ({
+        // Limitar a últimos 20 mensajes para evitar contexto muy largo
+        const MAX_HISTORY = 20
+        const recentHistory = history.slice(-MAX_HISTORY)
+        
+        const coreMessages = recentHistory.map((msg: { role: string; content: string }) => ({
           role: msg.role as 'user' | 'assistant',
           content: msg.content
         }))
         
-        // Agregar el mensaje actual
-        coreMessages.push({ role: 'user' as const, content: message })
+        // Detectar si el mensaje actual parece necesitar contexto
+        const contextualKeywords = [
+          'desglosame', 'desglosa', 'por vendedor', 'por producto', 'por mes', 'por cliente',
+          'el primero', 'el segundo', 'el tercero', 'el cuarto', 'el quinto',
+          'ese', 'esa', 'eso', 'esos', 'esas', 'este', 'esta',
+          'dale', 'pasame', 'mostrá', 'mostrame',
+          'pero', 'no,', 'digo', 'digo,', 'quiero decir',
+          'y de', 'y los', 'y las', 'también',
+          'más detalle', 'detallame', 'expandí', 'ampliá'
+        ]
+        const messageLower = message.toLowerCase()
+        const needsContext = contextualKeywords.some(kw => messageLower.includes(kw)) || message.length < 30
+        
+        // Si necesita contexto y hay historial, añadir resumen explícito
+        let enhancedMessage = message
+        if (needsContext && recentHistory.length > 0) {
+          // Extraer los últimos intercambios relevantes
+          const lastExchanges = recentHistory.slice(-4) // últimos 2 pares user/assistant
+          const contextSummary = lastExchanges.map(m => `${m.role}: ${m.content.substring(0, 200)}`).join('\n')
+          
+          enhancedMessage = `[CONTEXTO DE CONVERSACIÓN RECIENTE - USALO PARA ENTENDER MI PEDIDO]
+${contextSummary}
+
+[MI MENSAJE ACTUAL]
+${message}
+
+Nota: Si mi mensaje es corto o hace referencia a algo anterior (como "desglosame", "el segundo", "por vendedor"), usá el contexto de arriba para entender qué quiero.`
+        }
+        
+        // Agregar el mensaje actual (posiblemente mejorado)
+        coreMessages.push({ role: 'user' as const, content: enhancedMessage })
         
         // Combinar tools y system prompts
         let combinedTools: Record<string, any> = {}
