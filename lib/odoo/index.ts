@@ -29,6 +29,7 @@ export {
 // Tools Layer (Vercel AI SDK)
 export {
   odooTools,
+  discoverModelTool,
   searchRecordsTool,
   analyzeDataTool
 } from './tools'

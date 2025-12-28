@@ -445,6 +445,156 @@ EJEMPLOS REALES:
 })
 
 // ============================================================================
+// CACHE DE SCHEMAS
+// ============================================================================
+
+interface FieldInfo {
+  name: string
+  type: string
+  string: string  // Label en Odoo
+  required?: boolean
+  readonly?: boolean
+  relation?: string  // Para Many2one/Many2many
+}
+
+interface SchemaCache {
+  fields: Record<string, FieldInfo>
+  timestamp: number
+  summary: string  // Resumen legible para el prompt
+}
+
+const schemaCache = new Map<string, SchemaCache>()
+const SCHEMA_CACHE_TTL = 60 * 60 * 1000 // 1 hora
+
+function getFieldSummary(fields: Record<string, any>): string {
+  const fieldList: string[] = []
+  
+  for (const [name, info] of Object.entries(fields)) {
+    // Filtrar campos técnicos
+    if (name.startsWith('__') || name === 'id') continue
+    
+    const type = info.type || 'unknown'
+    const label = info.string || name
+    
+    // Formato compacto: campo (tipo) - etiqueta
+    let entry = `${name} (${type})`
+    if (info.relation) {
+      entry += ` → ${info.relation}`
+    }
+    fieldList.push(entry)
+  }
+  
+  return fieldList.slice(0, 50).join('\n') // Max 50 campos
+}
+
+// ============================================================================
+// DISCOVER MODEL TOOL
+// ============================================================================
+
+const DiscoverModelSchema = z.object({
+  model: z.string()
+    .describe('Modelo Odoo a descubrir. Ej: "sale.order", "stock.move", "crm.lead"')
+})
+
+/**
+ * discover_model: Descubre campos disponibles de un modelo ANTES de consultar
+ * 
+ * WORKFLOW RECOMENDADO:
+ * 1. Usuario pregunta sobre un modelo desconocido
+ * 2. Usar discover_model para ver qué campos existen
+ * 3. Construir query con campos reales (no inventados)
+ */
+export const discoverModelTool = tool({
+  description: `Descubre campos disponibles de un modelo Odoo ANTES de consultarlo.
+
+CUÁNDO USAR:
+✅ Cuando no conocés los campos exactos de un modelo
+✅ Antes de hacer una consulta a un modelo nuevo
+✅ Cuando el usuario pregunta por algo que no conocés
+
+WORKFLOW:
+1. discover_model("stock.move") → Ver campos disponibles
+2. Usar los campos REALES en search_records o analyze_data
+
+IMPORTANTE: NUNCA inventar nombres de campos. SIEMPRE descubrir primero.`,
+  
+  inputSchema: DiscoverModelSchema,
+  
+  execute: async (params): Promise<OdooToolResult> => {
+    console.log('[Tool:discover_model] Discovering:', params.model)
+    
+    // Verificar cache
+    const cached = schemaCache.get(params.model)
+    if (cached && Date.now() - cached.timestamp < SCHEMA_CACHE_TTL) {
+      console.log('[Tool:discover_model] Cache hit for', params.model)
+      return {
+        success: true,
+        model: params.model,
+        data: {
+          fields: cached.fields,
+          summary: cached.summary,
+          cached: true
+        }
+      }
+    }
+    
+    // Cliente Odoo
+    const client = await getOdooClient()
+    if (!client) {
+      return {
+        success: false,
+        error: 'No se pudo conectar con Odoo'
+      }
+    }
+    
+    // Llamar a fields_get
+    const result = await client.getModelFields(params.model)
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        error: result.error || `No se pudo descubrir el modelo ${params.model}`
+      }
+    }
+    
+    // Procesar campos
+    const fields: Record<string, FieldInfo> = {}
+    for (const [name, info] of Object.entries(result.data as Record<string, any>)) {
+      fields[name] = {
+        name,
+        type: info.type,
+        string: info.string,
+        required: info.required,
+        readonly: info.readonly,
+        relation: info.relation
+      }
+    }
+    
+    const summary = getFieldSummary(result.data)
+    
+    // Guardar en cache
+    schemaCache.set(params.model, {
+      fields,
+      timestamp: Date.now(),
+      summary
+    })
+    
+    console.log('[Tool:discover_model] Discovered', Object.keys(fields).length, 'fields for', params.model)
+    
+    return {
+      success: true,
+      model: params.model,
+      count: Object.keys(fields).length,
+      data: {
+        fields,
+        summary,
+        cached: false
+      }
+    }
+  }
+})
+
+// ============================================================================
 // EXPORTS
 // ============================================================================
 
@@ -452,10 +602,12 @@ EJEMPLOS REALES:
  * Tools inteligentes de Odoo para Vercel AI SDK
  * 
  * USO:
+ * - discover_model: Descubrir campos ANTES de consultar (estilo Odoo Enterprise)
  * - search_records: Búsquedas puntuales (últimos pedidos, cliente X)
  * - analyze_data: Agregaciones BI (ventas por mes, top productos)
  */
 export const odooTools = {
+  discover_model: discoverModelTool,
   search_records: searchRecordsTool,
   analyze_data: analyzeDataTool
 }
@@ -463,5 +615,6 @@ export const odooTools = {
 /**
  * Tipos exportados para uso externo
  */
+export type DiscoverModelParams = z.infer<typeof DiscoverModelSchema>
 export type SearchRecordsParams = z.infer<typeof SearchRecordsSchema>
 export type AnalyzeDataParams = z.infer<typeof AnalyzeDataSchema>
