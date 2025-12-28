@@ -47,7 +47,7 @@ const ODOO_MENTAL_MAP = `
 - "Plantilla de producto" → product.template
 - "Categoría" → product.category
 - "Stock", "Existencias" → stock.quant
-- "Movimiento de stock" → stock.move
+- "Movimiento de stock", "Ajuste de inventario" → stock.move
 - "Transferencia", "Picking" → stock.picking
 - "Ubicación" → stock.location
 
@@ -158,6 +158,17 @@ Tipos (type): consu (consumible), product (almacenable), service
 | scheduled_date | Fecha programada |
 | date_done | Fecha completado |
 | partner_id | Cliente/Proveedor |
+
+**stock.move (Movimientos de stock):**
+| ❌ NUNCA usar | ✅ Campo correcto | Descripción |
+|---------------|-------------------|-------------|
+| qty | product_uom_qty | Cantidad demandada |
+| qty_done | quantity | Cantidad realizada |
+| source | location_id | Ubicación origen |
+| destination | location_dest_id | Ubicación destino |
+
+Estados (state): draft, waiting, confirmed, assigned, done, cancel
+Tip: location_id.usage = 'inventory' para ajustes
 
 ### Many2one: Cómo se devuelven
 Odoo devuelve Many2one como tupla \`[id, "Nombre"]\`:
@@ -468,6 +479,69 @@ const EXTENDED_OPERATIONS_GUIDE = `
   "model": "stock.picking",
   "domainJson": "[[\"scheduled_date\",\"<\",\"FECHA_HOY\"],[\"state\",\"not in\",[\"done\",\"cancel\"]]]",
   "fieldsJson": "[\"name\",\"partner_id\",\"scheduled_date\",\"state\",\"picking_type_id\"]"
+}
+\`\`\`
+
+**stock.move (Movimientos de stock):**
+
+Campos clave:
+| Campo | Descripción |
+|-------|-------------|
+| product_id | Producto |
+| product_uom_qty | Cantidad demandada |
+| quantity | Cantidad realizada (antes: quantity_done) |
+| location_id | Ubicación origen |
+| location_dest_id | Ubicación destino |
+| date | Fecha del movimiento |
+| state | Estado: draft, waiting, confirmed, assigned, done, cancel |
+| picking_id | Picking relacionado |
+| origin | Documento origen (SO, PO, etc.) |
+| reference | Referencia del movimiento |
+
+\`\`\`json
+// Movimientos de stock del mes (entradas y salidas)
+{
+  "model": "stock.move",
+  "domainJson": "[[\"state\",\"=\",\"done\"],[\"date\",\">=\",\"INICIO_MES\"],[\"date\",\"<=\",\"HOY\"]]",
+  "fieldsJson": "[\"product_id\",\"product_uom_qty\",\"quantity\",\"location_id\",\"location_dest_id\",\"date\",\"origin\"]"
+}
+
+// Ajustes de inventario (movimientos a/desde ubicación de inventario)
+{
+  "model": "stock.move",
+  "domainJson": "[[\"state\",\"=\",\"done\"],[\"location_id.usage\",\"=\",\"inventory\"]]",
+  "fieldsJson": "[\"product_id\",\"quantity\",\"date\",\"reference\"]"
+}
+
+// Movimientos por producto
+{
+  "model": "stock.move",
+  "domainJson": "[[\"state\",\"=\",\"done\"]]",
+  "fieldsJson": "[\"quantity:sum\"]",
+  "groupbyJson": "[\"product_id\"]",
+  "orderby": "quantity desc",
+  "limit": 20
+}
+
+// Entradas de stock (recepciones)
+{
+  "model": "stock.move",
+  "domainJson": "[[\"state\",\"=\",\"done\"],[\"location_dest_id.usage\",\"=\",\"internal\"],[\"location_id.usage\",\"!=\",\"internal\"]]",
+  "fieldsJson": "[\"product_id\",\"quantity\",\"date\",\"origin\",\"picking_id\"]"
+}
+
+// Salidas de stock (entregas/consumos)
+{
+  "model": "stock.move",
+  "domainJson": "[[\"state\",\"=\",\"done\"],[\"location_id.usage\",\"=\",\"internal\"],[\"location_dest_id.usage\",\"!=\",\"internal\"]]",
+  "fieldsJson": "[\"product_id\",\"quantity\",\"date\",\"origin\",\"picking_id\"]"
+}
+
+// Transferencias internas
+{
+  "model": "stock.move",
+  "domainJson": "[[\"state\",\"=\",\"done\"],[\"location_id.usage\",\"=\",\"internal\"],[\"location_dest_id.usage\",\"=\",\"internal\"]]",
+  "fieldsJson": "[\"product_id\",\"quantity\",\"location_id\",\"location_dest_id\",\"date\"]"
 }
 \`\`\`
 
