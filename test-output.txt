@@ -1,0 +1,284 @@
+🧪 Test de Preguntas de Negocio para Tuqui
+Modo: all 
+
+Total preguntas: 100
+Total conversaciones: 20
+Por categoría: ventas:10, stock:10, facturacion:10, clientes:10, vendedores:10, productos:10, alertas:10, comparativas:10, tendencias:10, operaciones:10
+Por complejidad: media:43, simple:44, alta:13
+
+======================================================================
+📝 TEST: PREGUNTAS INDIVIDUALES
+======================================================================
+Testeando 100 preguntas...
+
+[1/100] ¿Cómo vienen las ventas de esta semana comparado c... ✅ (3300ms)
+[2/100] ¿Estamos vendiendo más o menos que el mes pasado?... ✅ (1758ms)
+[3/100] ¿Cuál fue nuestro mejor día de ventas en diciembre... ✅ (1750ms)
+[4/100] ¿Cuántas ventas quedaron sin confirmar este mes?... ⚠️ Sin datos (1570ms)
+[5/100] ¿Cuál es el ticket promedio de venta?... ✅ (1209ms)
+[6/100] ¿Cuánto vendimos por trimestre este año?... ✅ (1952ms)
+[7/100] ¿Las ventas de este año superan las del año pasado... ✅ (2361ms)
+[8/100] ¿Cuáles son las 5 ventas más grandes del mes?... ✅ (2054ms)
+[9/100] ¿Cuántas órdenes de venta se cancelaron este mes?... ✅ (1363ms)
+[10/100] ¿Qué día de la semana vendemos más?... ✅ (1519ms)
+[11/100] ¿Qué productos tienen stock crítico o cero?... ✅ (1478ms)
+[12/100] ¿Hay productos que deberíamos reponer urgente?... ✅ (1402ms)
+[13/100] ¿Cuánto vale el inventario total?... ✅ (1442ms)
+[14/100] ¿Hubo muchos ajustes de inventario este mes?... ❓ Clarif (1235ms)
+[15/100] ¿Hay productos con stock negativo?... ✅ (2566ms)
+[16/100] ¿Qué productos no se vendieron en los últimos 3 me... ✅ (1646ms)
+[17/100] ¿Cuántas transferencias de stock hicimos esta sema... ⚠️ Sin datos (1289ms)
+[18/100] ¿Cuáles son los productos con más stock?... ✅ (3843ms)
+[19/100] ¿Qué ubicación tiene más productos?... ✅ (1569ms)
+[20/100] ¿Hay recepciones de mercadería pendientes?... ⚠️ Sin datos (1518ms)
+[21/100] ¿Cuánto facturamos esta semana?... ✅ (1541ms)
+[22/100] ¿Estamos facturando menos que la semana pasada?... ✅ (2566ms)
+[23/100] ¿Cuánta deuda tenemos sin cobrar?... ✅ (1544ms)
+[24/100] ¿Quiénes son los clientes que más nos deben?... ✅ (2876ms)
+[25/100] ¿Cuántas facturas vencidas tenemos?... ✅ (1747ms)
+[26/100] ¿Hay facturas de más de 90 días sin pagar?... ✅ (1723ms)
+[27/100] ¿Cuánto cobramos esta semana?... ✅ (1364ms)
+[28/100] ¿Cuántas notas de crédito emitimos este mes?... ⚠️ Sin datos (1644ms)
+[29/100] ¿A cuánto ascienden las notas de crédito del mes?... ✅ (1542ms)
+[30/100] ¿Cuál es la factura más grande del mes?... ✅ (1910ms)
+[31/100] ¿Cuántos clientes nuevos tuvimos este mes?... ❓ Clarif (1279ms)
+[32/100] ¿Qué clientes dejaron de comprar?... ✅ (2877ms)
+[33/100] ¿Cuál es nuestro cliente más importante por factur... ✅ (1539ms)
+[34/100] ¿Hay clientes con crédito excedido?... ✅ (2151ms)
+[35/100] ¿Cuántos clientes activos tenemos?... ✅ (1344ms)
+[36/100] ¿Qué clientes no compraron en los últimos 6 meses?... ✅ (1456ms)
+[37/100] ¿Cuál es el ticket promedio por cliente?... ✅ (1320ms)
+[38/100] ¿De qué provincia son nuestros mejores clientes?... ✅ (1832ms)
+[39/100] ¿Cuántos clientes compraron más de una vez este añ... ✅ (1666ms)
+[40/100] ¿Qué cliente tiene más órdenes este año?... ✅ (1457ms)
+[41/100] ¿Quién es el vendedor del mes?... ✅ (1527ms)
+[42/100] ¿Hay vendedores que no vendieron nada esta semana?... ✅ (2251ms)
+[43/100] ¿Cuánto vendió cada vendedor este mes?... ✅ (2471ms)
+[44/100] ¿Qué vendedor tiene el ticket promedio más alto?... ✅ (1439ms)
+[45/100] ¿Quién tiene más cotizaciones pendientes?... ✅ (1441ms)
+[46/100] ¿Qué vendedor tiene más clientes?... ✅ (1543ms)
+[47/100] ¿Cómo le fue a cada vendedor comparado con el mes ... ✅ (2224ms)
+[48/100] ¿Qué vendedor cerró más ventas esta semana?... ✅ (1582ms)
+[49/100] ¿Cuántas ventas tiene cada vendedor en el año?... ✅ (1436ms)
+[50/100] ¿Hay vendedores con muchas cotizaciones sin conver... ✅ (1537ms)
+[51/100] ¿Cuál es el producto estrella este mes?... ✅ (1672ms)
+[52/100] ¿Qué productos no se vendieron en todo el año?... ✅ (2471ms)
+[53/100] ¿Qué categoría de productos vendemos más?... ✅ (1720ms)
+[54/100] ¿Cuántos productos activos tenemos?... ✅ (1235ms)
+[55/100] ¿Cuál es el precio promedio de nuestros productos?... ✅ (1134ms)
+[56/100] ¿Qué productos tienen el precio más alto?... ✅ (3489ms)
+[57/100] ¿Cuántos productos vendimos en unidades este mes?... ✅ (1645ms)
+[58/100] ¿Qué producto se vende más en cantidad?... ✅ (1387ms)
+[59/100] ¿Hay productos descontinuados con stock?... ✅ (1359ms)
+[60/100] ¿Cuántas categorías de productos tenemos?... ✅ (971ms)
+[61/100] ¿Hay algo preocupante que deba saber hoy?... ✅ (1907ms)
+[62/100] ¿Tenemos pedidos atrasados sin entregar?... ✅ (1712ms)
+[63/100] ¿Hay clientes con problemas de pago recurrentes?... ✅ (1307ms)
+[64/100] ¿Las devoluciones aumentaron este mes?... ✅ (1813ms)
+[65/100] ¿Algún vendedor necesita atención?... ✅ (1478ms)
+[66/100] ¿Las cancelaciones de pedidos están aumentando?... ⚠️ Sin datos (2183ms)
+[67/100] ¿Hay facturas que llevan más de un año sin cobrar?... ✅ (1790ms)
+[68/100] ¿Qué clientes están por exceder su crédito?... ✅ (1262ms)
+[69/100] ¿Hay productos que se venden muy por debajo del pr... ✅ (1856ms)
+[70/100] ¿Tenemos órdenes de compra muy atrasadas?... ✅ (1505ms)
+[71/100] ¿Este diciembre es mejor que el del año pasado?... ✅ (2145ms)
+[72/100] ¿El Q4 superó al Q3?... ✅ (2004ms)
+[73/100] ¿Cómo estamos vs el mismo período del año pasado?... ✅ (1859ms)
+[74/100] ¿Vendemos más unidades o solo más monto?... ✅ (2454ms)
+[75/100] ¿La facturación sigue el ritmo de las ventas?... ✅ (3537ms)
+[76/100] ¿Cobramos más o menos que el mes pasado?... ⚠️ Sin datos (1622ms)
+[77/100] ¿Cómo está la deuda comparada con hace 3 meses?... ⚠️ Sin datos (1520ms)
+[78/100] ¿El promedio de venta subió o bajó este mes?... ✅ (3180ms)
+[79/100] ¿Tenemos más o menos clientes activos que antes?... ✅ (2363ms)
+[80/100] ¿Las notas de crédito están aumentando?... ✅ (2150ms)
+[81/100] ¿Las ventas tienen tendencia al alza o a la baja?... ✅ (3084ms)
+[82/100] ¿Qué mes fue el mejor del año en ventas?... ✅ (1543ms)
+[83/100] ¿La deuda está creciendo o disminuyendo?... ⚠️ Sin datos (1647ms)
+[84/100] ¿El ticket promedio está subiendo o bajando?... ✅ (1848ms)
+[85/100] ¿Qué trimestre tuvo más ventas?... ✅ (1441ms)
+[86/100] ¿En qué mes cobramos más?... ✅ (1340ms)
+[87/100] ¿La cantidad de pedidos va en aumento?... ⚠️ Sin datos (1745ms)
+[88/100] ¿Qué producto creció más en ventas este año?... ✅ (2459ms)
+[89/100] ¿Qué vendedor mejoró más su performance?... ✅ (2370ms)
+[90/100] ¿La cantidad de clientes nuevos está creciendo?... ✅ (1849ms)
+[91/100] ¿Cuántos pedidos procesamos por día en promedio?... ✅ (1338ms)
+[92/100] ¿Hay pickings pendientes de hace más de una semana... ⚠️ Sin datos (2467ms)
+[93/100] ¿Cuántas órdenes de compra tenemos abiertas?... ⚠️ Sin datos (1335ms)
+[94/100] ¿Qué proveedor tiene más entregas pendientes?... ⚠️ Sin datos (2055ms)
+[95/100] ¿Cuántos usuarios activos hay en el sistema?... ⚠️ Sin datos (1029ms)
+[96/100] ¿Cuántas oportunidades de CRM tenemos abiertas?... ⚠️ Sin datos (1306ms)
+[97/100] ¿En qué etapa del CRM hay más oportunidades?... ⚠️ Sin datos (1574ms)
+[98/100] ¿Cuánto vale el pipeline de ventas?... ✅ (1137ms)
+[99/100] ¿Hay actividades vencidas sin completar?... ⚠️ Sin datos (2055ms)
+[100/100] Dame un resumen ejecutivo del estado del negocio... ⚠️ Sin datos (1112ms)
+
+======================================================================
+🔗 TEST: CONVERSACIONES ENCADENADAS
+======================================================================
+Testeando 20 conversaciones...
+
+
+[chain-1] Ventas → Vendedor → Productos
+   Historial: 2 mensajes
+   Pregunta: "desglosame por vendedor"
+   ✅ Usó contexto correctamente (1333ms)
+   "**Ventas de diciembre 2025 por vendedor:**  | Vendedor | Monto | |:-------------..."
+
+[chain-2] Ventas → Top vendedor → Sus productos
+   Historial: 2 mensajes
+   Pregunta: "¿qué productos vende él?"
+   ⚠️ Respondió pero no está claro si usó contexto
+   "```json {   "model": "sale.order.line",   "domainJson": "[[\"order_id.user_id\",..."
+
+[chain-3] Ventas → Comparación → Por trimestre
+   Historial: 2 mensajes
+   Pregunta: "desglosame por trimestre"
+   ✅ Usó contexto correctamente (1273ms)
+   "**Ventas por Trimestre en 2025:**  | Trimestre |  Ventas | |:----------|--------..."
+
+[chain-4] Top clientes → Segundo → Su deuda
+   Historial: 2 mensajes
+   Pregunta: "el segundo cuánto nos debe?"
+   ✅ Usó contexto correctamente (918ms)
+   "El cliente Universidad de Buenos Aires tiene un saldo deudor de $ 0,00...."
+
+[chain-5] Deudores → Top 1 → Sus facturas
+   Historial: 2 mensajes
+   Pregunta: "mostrame las facturas del primero"
+   ✅ Usó contexto correctamente (1051ms)
+   "```json {   "model": "account.move",   "domainJson": "[[\"partner_id\", \"=\", 3..."
+
+[chain-6] Clientes inactivos → Cantidad → Detalle
+   Historial: 2 mensajes
+   Pregunta: "pasame el listado"
+   ⚠️ Respondió pero no está claro si usó contexto
+   "```json {   "model": "res.partner",   "domainJson": "[['customer_rank', '>', 0],..."
+
+[chain-7] Producto estrella → Stock → Proyección
+   Historial: 2 mensajes
+   Pregunta: "¿cuánto stock tenemos de ese?"
+   ✅ Usó contexto correctamente (1650ms)
+   "```json {   "model": "stock.quant",   "domainJson": "[[\"product_id\", \"=\", 1]..."
+
+[chain-8] Productos sin stock → Categoría → Reponer
+   Historial: 2 mensajes
+   Pregunta: "¿de qué categoría son la mayoría?"
+   ✅ Usó contexto correctamente (1606ms)
+   "```json {   "model": "product.product",   "domainJson": "[[\"type\",\"=\",\"prod..."
+
+[chain-9] Ranking vendedores → Sin asignar → Filtrar
+   Historial: 2 mensajes
+   Pregunta: "pero sin contar el "sin asignar""
+   ✅ Usó contexto correctamente (2394ms)
+   "```json {   "model": "sale.order",   "domainJson": "[[\"state\",\"in\",[\"sale\"..."
+
+[chain-10] Vendedor específico → MoM → Productos
+   Historial: 2 mensajes
+   Pregunta: "¿y el mes pasado?"
+   ✅ Usó contexto correctamente (771ms)
+   "Martín Travella vendió $229.473.486,87 en noviembre...."
+
+[chain-11] Vendedores inactivos → Semana → Lista
+   Historial: 2 mensajes
+   Pregunta: "¿quiénes son?"
+   ⚠️ Respondió pero no está claro si usó contexto
+   "```tool_code {   "model": "res.users",   "domainJson": "[[\"sale_team_id\", "!="..."
+
+[chain-12] Deuda total → Vencida → Antigua
+   Historial: 2 mensajes
+   Pregunta: "¿cuánto de eso está vencido?"
+   ⚠️ Respondió pero no está claro si usó contexto
+   "```tool_code {   "model": "account.move",   "domainJson": "[[\"move_type\", \"in..."
+
+[chain-13] Facturación → WoW → Detalle
+   Historial: 2 mensajes
+   Pregunta: "¿es más o menos que la semana pasada?"
+   ✅ Usó contexto correctamente (2148ms)
+   "Para determinar si la facturación es mayor o menor que la semana pasada, necesit..."
+
+[chain-14] Alertas → Específica → Acción
+   Historial: 2 mensajes
+   Pregunta: "contame más de los pedidos atrasados"
+   ⚠️ Respondió pero no está claro si usó contexto
+   "Los pedidos atrasados corresponden a transferencias de stock. Son los siguientes..."
+
+[chain-15] Stock crítico → Productos → Proveedor
+   Historial: 2 mensajes
+   Pregunta: "¿a qué proveedor le compramos esos?"
+   ✅ Usó contexto correctamente (1251ms)
+   "Para saber a qué proveedor le compramos esos productos, necesito buscar los movi..."
+
+[chain-16] YoY → Desglose → Mejor mes
+   Historial: 2 mensajes
+   Pregunta: "¿en qué mes crecimos más?"
+   ✅ Usó contexto correctamente (2358ms)
+   "Para determinar en qué mes crecimos más en comparación con el año pasado, necesi..."
+
+[chain-17] Tendencia ventas → Causa → Acción
+   Historial: 2 mensajes
+   Pregunta: "¿qué producto cayó más?"
+   ❓ Pidió clarificación (NO usó contexto)
+   "Para determinar qué producto experimentó la mayor caída en ventas, necesito comp..."
+
+[chain-18] Pipeline → Etapas → Top oportunidad
+   Historial: 2 mensajes
+   Pregunta: "¿en qué etapa hay más valor?"
+   ✅ Usó contexto correctamente (1756ms)
+   "El valor más alto del pipeline está en la etapa "Calificado" con un total de $16..."
+
+[chain-19] Oportunidades → Vendedor → Detalle
+   Historial: 2 mensajes
+   Pregunta: "¿qué vendedor tiene más?"
+   ⚠️ Respondió pero no está claro si usó contexto
+   "```json {   "model": "crm.lead",   "domainJson": "[[\"type\",\"=\",\"opportunity..."
+
+[chain-20] Resumen → Drill-down → Acción
+   Historial: 2 mensajes
+   Pregunta: "profundizame en la deuda"
+   ✅ Usó contexto correctamente (1037ms)
+   "Para darte más detalle de la deuda, necesito saber qué información te interesa e..."
+
+======================================================================
+📊 REPORTE FINAL
+======================================================================
+
+📝 PREGUNTAS INDIVIDUALES
+   Total: 100
+   ✅ Exitosas: 81 (81.0%)
+   ❓ Pidieron clarificación: 2
+   ⚠️ Sin datos: 17
+   ❌ Errores: 0
+
+   Por categoría:
+      ventas: 9/10 (90%) - 0 clarif
+      stock: 7/10 (70%) - 1 clarif
+      facturacion: 9/10 (90%) - 0 clarif
+      clientes: 9/10 (90%) - 1 clarif
+      vendedores: 10/10 (100%) - 0 clarif
+      productos: 10/10 (100%) - 0 clarif
+      alertas: 9/10 (90%) - 0 clarif
+      comparativas: 8/10 (80%) - 0 clarif
+      tendencias: 8/10 (80%) - 0 clarif
+      operaciones: 2/10 (20%) - 0 clarif
+
+   Por complejidad:
+      media: 34/43 (79%)
+      simple: 36/44 (82%)
+      alta: 11/13 (85%)
+
+🔗 CONVERSACIONES ENCADENADAS
+   Total: 20
+   ✅ Exitosas: 13 (65.0%)
+   🧠 Usaron contexto: 13
+   ❓ Pidieron clarificación: 1
+
+🔴 PRINCIPALES PROBLEMAS
+
+   Preguntas que pidieron clarificación:
+      - [stock] "¿Hubo muchos ajustes de inventario este mes?..."
+      - [clientes] "¿Cuántos clientes nuevos tuvimos este mes?..."
+
+   Conversaciones que no usaron contexto:
+      - [chain-17] "¿qué producto cayó más?"
+
+💾 Resultados guardados en: business-test-results-2025-12-28.json

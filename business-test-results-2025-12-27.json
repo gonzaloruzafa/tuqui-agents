@@ -1,0 +1,325 @@
+{
+  "timestamp": "2025-12-27T18:24:29.586Z",
+  "summary": {
+    "individual": {
+      "total": 20,
+      "success": 12,
+      "clarifications": 1,
+      "noData": 7,
+      "errors": 0,
+      "successRate": "60.0%"
+    },
+    "chains": {
+      "total": 5,
+      "success": 5,
+      "usedContext": 5,
+      "clarifications": 0,
+      "successRate": "100.0%"
+    },
+    "byCategory": {
+      "ventas": {
+        "success": 9,
+        "total": 10,
+        "clarif": 0
+      },
+      "stock": {
+        "success": 3,
+        "total": 10,
+        "clarif": 1
+      }
+    },
+    "byComplexity": {
+      "media": {
+        "success": 6,
+        "total": 8
+      },
+      "simple": {
+        "success": 4,
+        "total": 10
+      },
+      "alta": {
+        "success": 2,
+        "total": 2
+      }
+    }
+  },
+  "individualResults": [
+    {
+      "id": 1,
+      "question": "¿Cómo vienen las ventas de esta semana comparado con la semana pasada?",
+      "category": "ventas",
+      "complexity": "media",
+      "response": "```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"in\\\",[\\\"sale\\\",\\\"done\\\"]],[\\\"date_order\\\",\\\">=\\\",\\\"2025-12-22\\\"]]\",\n  \"fieldsJson\": \"[\\\"amount_total:sum\\\"]\"\n}\n```\n```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"in\\\",[\\\"sale\\\",\\\"done\\\"]],[\\\"date_order\\\",\\\">=\\\",\\\"2025-12-15\\\"],[\\\"date_order\\\",\\\"<=\\\",\\\"2025-12-21\\\"]]\",\n  \"fieldsJson\": \"[\\\"amount_total:sum\\\"]\"\n}\n```",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 2583
+    },
+    {
+      "id": 2,
+      "question": "¿Estamos vendiendo más o menos que el mes pasado?",
+      "category": "ventas",
+      "complexity": "media",
+      "response": "Para determinar si las ventas están creciendo, comparo diciembre 2025 vs noviembre 2025:\n\n1. Primero consulto ventas de diciembre\n2. Luego consulto ventas de noviembre\n3. Calculo: ((dic - nov) / nov) * 100 = cambio%\n\n```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"in\\\",[\\\"sale\\\",\\\"done\\\"]],[\\\"date_order\\\",\\\">=\\\",\\\"2025-12-01\\\"],[\\\"date_order\\\",\\\"<=\\\",\\\"2025-12-27\\\"]]\",\n  \"fieldsJson\": \"[\\\"amount_total:sum\\\"]\"\n}\n```\n\n```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"in\\\",[\\\"sale\\\",\\\"done\\\"]],[\\\"date_order\\\",\\\">=\\\",\\\"2025-11-01\\\"],[\\\"date_order\\\",\\\"<=\\\",\\\"2025-11-30\\\"]]\",\n  \"fieldsJson\": \"[\\\"amount_total:sum\\\"]\"\n}\n```",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 2123
+    },
+    {
+      "id": 3,
+      "question": "¿Cuál fue nuestro mejor día de ventas en diciembre?",
+      "category": "ventas",
+      "complexity": "media",
+      "response": "```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"in\\\",[\\\"sale\\\",\\\"done\\\"]],[\\\"date_order\\\",\\\">=\\\",\\\"2025-12-01\\\"],[\\\"date_order\\\",\\\"<=\\\",\\\"2025-12-27\\\"]]\",\n  \"fieldsJson\": \"[\\\"amount_total:sum\\\"]\",\n  \"groupbyJson\": \"[\\\"date_order:day\\\"]\",\n  \"orderby\": \"amount_total desc\",\n  \"limit\": 1\n}\n```",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 1484
+    },
+    {
+      "id": 4,
+      "question": "¿Cuántas ventas quedaron sin confirmar este mes?",
+      "category": "ventas",
+      "complexity": "simple",
+      "response": "Para responder tu consulta, buscaré la cantidad de órdenes de venta que están en estado 'draft' o 'sent' (es decir, sin confirmar) durante este mes.\n\n```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"in\\\",[\\\"draft\\\",\\\"sent\\\"]],[\\\"date_order\\\",\\\">=\\\",\\\"2025-12-01\\\"]]\",\n  \"fieldsJson\": \"[\\\"id:count\\\"]\"\n}\n```",
+      "success": false,
+      "hasData": false,
+      "askedClarification": false,
+      "durationMs": 1325
+    },
+    {
+      "id": 5,
+      "question": "¿Cuál es el ticket promedio de venta?",
+      "category": "ventas",
+      "complexity": "simple",
+      "response": "Para calcular el ticket promedio de venta, necesito dividir el total de ventas por la cantidad de ventas. ¿De qué periodo te gustaría calcularlo? Por ejemplo, ¿de este mes, del mes pasado o de este año?",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 1075
+    },
+    {
+      "id": 6,
+      "question": "¿Cuánto vendimos por trimestre este año?",
+      "category": "ventas",
+      "complexity": "media",
+      "response": "```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"in\\\",[\\\"sale\\\",\\\"done\\\"]],[\\\"date_order\\\",\\\">=\\\",\\\"2025-01-01\\\"]]\",\n  \"fieldsJson\": \"[\\\"amount_total:sum\\\"]\",\n  \"groupbyJson\": \"[\\\"date_order:quarter\\\"]\"\n}\n```",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 1287
+    },
+    {
+      "id": 7,
+      "question": "¿Las ventas de este año superan las del año pasado?",
+      "category": "ventas",
+      "complexity": "media",
+      "response": "Para determinar si las ventas de este año superan las del año pasado, voy a comparar las ventas acumuladas desde el 01/01/2025 hasta hoy con las ventas del mismo período del año anterior.\n\n**Ventas desde el 01/01/2025 hasta hoy (27/12/2025):**\n```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"in\\\",[\\\"sale\\\",\\\"done\\\"]],[\\\"date_order\\\",\\\">=\\\",\\\"2025-01-01\\\"],[\\\"date_order\\\",\\\"<=\\\",\\\"2025-12-27\\\"]]\",\n  \"fieldsJson\": \"[\\\"amount_total:sum\\\"]\"\n}\n```\n\n**Ventas del 01/01/2024 al 27/12/2024:**\n```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"in\\\",[\\\"sale\\\",\\\"done\\\"]],[\\\"date_order\\\",\\\">=\\\",\\\"2024-01-01\\\"],[\\\"date_order\\\",\\\"<=\\\",\\\"2024-12-27\\\"]]\",\n  \"fieldsJson\": \"[\\\"amount_total:sum\\\"]\"\n}\n```\n",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 2332
+    },
+    {
+      "id": 8,
+      "question": "¿Cuáles son las 5 ventas más grandes del mes?",
+      "category": "ventas",
+      "complexity": "simple",
+      "response": "```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"date_order\\\",\\\">=\\\",\\\"2025-12-01\\\"],[\\\"state\\\",\\\"in\\\",[\\\"sale\\\",\\\"done\\\"]]]\",\n  \"fieldsJson\": \"[\\\"amount_total\\\"]\",\n  \"groupbyJson\": \"[\\\"name\\\"]\",\n  \"orderby\": \"amount_total desc\",\n  \"limit\": 5\n}\n```\nLas 5 ventas más grandes de diciembre 2025 son:\n\n| Venta | Monto |\n|:------|------:|\n| SO009 | $96.120,00 |\n| SO010 | $79.860,00 |\n| SO006 | $60.720,00 |\n| SO008 | $54.480,00 |\n| SO007 | $48.240,00 |",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 2098
+    },
+    {
+      "id": 9,
+      "question": "¿Cuántas órdenes de venta se cancelaron este mes?",
+      "category": "ventas",
+      "complexity": "simple",
+      "response": "```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[[\\\"state\\\",\\\"=\\\" ,\\\"cancel\\\"],[\\\"date_order\\\",\\\">=\\\" ,\\\"2025-12-01\\\"]]\",\n  \"fieldsJson\": \"[\\\"id:count\\\"]\"\n}\n```\nSe cancelaron 0 órdenes de venta en diciembre.",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 1330
+    },
+    {
+      "id": 10,
+      "question": "¿Qué día de la semana vendemos más?",
+      "category": "ventas",
+      "complexity": "alta",
+      "response": "Para determinar qué día de la semana tiene mayores ventas, necesito analizar las ventas por día de la semana y calcular el total vendido en cada uno.\n\n```json\n{\n  \"model\": \"sale.order\",\n  \"domainJson\": \"[['state','in',['sale','done']]]\",\n  \"fieldsJson\": \"['amount_total:sum']\",\n  \"groupbyJson\": \"['date_order:dayofweek']\",\n  \"orderby\": \"amount_total desc\"\n}\n```\n",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 1543
+    },
+    {
+      "id": 11,
+      "question": "¿Qué productos tienen stock crítico o cero?",
+      "category": "stock",
+      "complexity": "simple",
+      "response": "```json\n{\n  \"model\": \"product.product\",\n  \"domainJson\": \"[[\\\"type\\\",\\\"=\\\",\\\"product\\\"],[\\\"qty_available\\\",\\\"<=\\\",0]]\",\n  \"fieldsJson\": \"[\\\"name\\\",\\\"default_code\\\",\\\"categ_id\\\"]\"\n}\n```",
+      "success": false,
+      "hasData": false,
+      "askedClarification": false,
+      "durationMs": 1162
+    },
+    {
+      "id": 12,
+      "question": "¿Hay productos que deberíamos reponer urgente?",
+      "category": "stock",
+      "complexity": "media",
+      "response": "Para identificar productos que necesitan reposición urgente, buscaré aquellos con stock bajo. Consideraré aquellos con cantidad disponible menor a 10 unidades en ubicaciones internas.\n\n```json\n{\n  \"model\": \"stock.quant\",\n  \"domainJson\": \"[[\"quantity\",\">\",0],[\"quantity\",\"<\",10],[\"location_id.usage\",\"=\",\"internal\"]]\",\n  \"fieldsJson\": \"[\"product_id\",\"quantity\",\"location_id\"]\"\n}\n```",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 1453
+    },
+    {
+      "id": 13,
+      "question": "¿Cuánto vale el inventario total?",
+      "category": "stock",
+      "complexity": "simple",
+      "response": "El valor total del inventario es de $1.479.018,29.\n```json\n{\n  \"model\": \"stock.quant\",\n  \"domainJson\": \"[[\\\"location_id.usage\\\",\\\"=\\\",\\\"internal\\\"]] \",\n  \"fieldsJson\": \"[\\\"value:sum\\\"]\"\n}\n```",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 1214
+    },
+    {
+      "id": 14,
+      "question": "¿Hubo muchos ajustes de inventario este mes?",
+      "category": "stock",
+      "complexity": "media",
+      "response": "Para saber si hubo muchos ajustes de inventario este mes, necesito analizar la cantidad de ajustes de inventario registrados. Sin embargo, no tengo un modelo específico para \"ajustes de inventario\".\n\nPara responder a tu pregunta, puedo buscar movimientos de stock (stock.move) que puedan estar relacionados con ajustes de inventario.\n\n¿Te parece bien si busco la cantidad de movimientos de stock de tipo \"Ajuste de Inventario\" creados este mes?\n",
+      "success": false,
+      "hasData": false,
+      "askedClarification": false,
+      "durationMs": 1470
+    },
+    {
+      "id": 15,
+      "question": "¿Hay productos con stock negativo?",
+      "category": "stock",
+      "complexity": "simple",
+      "response": "```json\n{\n  \"model\": \"product.product\",\n  \"domainJson\": \"[[\\\"type\\\",\\\"in\\\",[\\\"product\\\",\\\"consu\\\"]],[\\\"qty_available\\\",\\\"<\\\",0]]\",\n  \"fieldsJson\": \"[\\\"name\\\",\\\"default_code\\\",\\\"qty_available\\\"]\"\n}\n```",
+      "success": false,
+      "hasData": false,
+      "askedClarification": false,
+      "durationMs": 1112
+    },
+    {
+      "id": 16,
+      "question": "¿Qué productos no se vendieron en los últimos 3 meses?",
+      "category": "stock",
+      "complexity": "alta",
+      "response": "Para identificar los productos que no se vendieron en los últimos 3 meses, necesito buscar aquellos productos que no tienen ninguna línea de venta en ese período.\n\n```json\n{\n  \"model\": \"product.product\",\n  \"domainJson\": \"[('id', 'not in', [line['product_id'][0] for line in env['sale.order.line'].search_read([('order_id.date_order', '>=', '2025-09-01')], ['product_id'])])]\",\n  \"fieldsJson\": \"['id', 'name', 'default_code']\"\n}\n```",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "durationMs": 1651
+    },
+    {
+      "id": 17,
+      "question": "¿Cuántas transferencias de stock hicimos esta semana?",
+      "category": "stock",
+      "complexity": "simple",
+      "response": "```json\n{\n  \"model\": \"stock.picking\",\n  \"domainJson\": \"[[\\\"scheduled_date\\\",\\\">=\\\",\\\"2025-12-22\\\"]]\",\n  \"fieldsJson\": \"[\\\"id:count\\\"]\"\n}\n```",
+      "success": false,
+      "hasData": false,
+      "askedClarification": false,
+      "durationMs": 1115
+    },
+    {
+      "id": 18,
+      "question": "¿Cuáles son los productos con más stock?",
+      "category": "stock",
+      "complexity": "simple",
+      "response": "¿Te refieres a los productos con mayor cantidad disponible en stock?",
+      "success": false,
+      "hasData": true,
+      "askedClarification": true,
+      "durationMs": 931
+    },
+    {
+      "id": 19,
+      "question": "¿Qué ubicación tiene más productos?",
+      "category": "stock",
+      "complexity": "media",
+      "response": "```json\n{\n  \"model\": \"stock.quant\",\n  \"domainJson\": \"[[\\\"location_id.usage\\\",\\\"=\\\",\\\"internal\\\"]]\",\n  \"fieldsJson\": \"[\\\"quantity:sum\\\"]\",\n  \"groupbyJson\": \"[\\\"location_id\\\"]\",\n  \"orderby\": \"quantity desc\",\n  \"limit\": 1\n}\n```",
+      "success": false,
+      "hasData": false,
+      "askedClarification": false,
+      "durationMs": 1244
+    },
+    {
+      "id": 20,
+      "question": "¿Hay recepciones de mercadería pendientes?",
+      "category": "stock",
+      "complexity": "simple",
+      "response": "Sí, hay recepciones de mercadería pendientes. ¿Querés que te muestre los detalles, como el proveedor, la fecha programada y el estado de cada recepción?",
+      "success": false,
+      "hasData": false,
+      "askedClarification": false,
+      "durationMs": 1165
+    }
+  ],
+  "chainResults": [
+    {
+      "id": "chain-1",
+      "question": "desglosame por vendedor",
+      "category": "ventas",
+      "response": "**Ventas de diciembre 2025 por vendedor:**\n\n| Vendedor | Monto |\n|:-----------------|---------:|\n| Sin Asignar | $9.564.827,92 |\n| Alan  | $4.346.692,00 |\n| Diego | $911.560,00 |\n\n**Total:** $14.823.079,92",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "usedContext": true,
+      "durationMs": 1455
+    },
+    {
+      "id": "chain-2",
+      "question": "¿qué productos vende él?",
+      "category": "ventas",
+      "response": "```json\n{\n  \"model\": \"sale.order.line\",\n  \"domainJson\": \"[[\\\"order_id.user_id\\\", \\\"=\\\", 7], [\\\"order_id.date_order\\\", \\\">=\\\", \\\"2025-12-01\\\"], [\\\"order_id.state\\\", \\\"in\\\", [\\\"sale\\\", \\\"done\\\"]]]\",\n  \"fieldsJson\": \"[\\\"product_id\\\", \\\"product_uom_qty:sum\\\"]\",\n  \"groupbyJson\": \"[\\\"product_id\\\"]\",\n  \"orderby\": \"product_uom_qty desc\",\n  \"limit\": 10\n}\n```\nLos productos que vendió Martín Travella este mes son:\n\n| Producto | Cantidad |\n|:---------|---------:|\n| Micrófono Shure SM58 | 88 |\n| Batería electrónica Roland TD-1DMK | 66 |\n| Teclado controlador MIDI Arturia Minilab MKII | 58 |\n| Monitor de estudio Yamaha HS5 | 50 |\n| Auriculares AKG K240 Studio | 49 |\n| Interface de audio Focusrite Scarlett 2i2 | 48 |\n| Guitarra eléctrica Fender Stratocaster | 48 |\n| Cable de micrófono XLR Mogami Gold | 43 |\n| Pedal de efectos Boss DS-1 Distortion | 42 |\n| Software de producción Ableton Live 11 | 42 |",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "usedContext": true,
+      "durationMs": 3037
+    },
+    {
+      "id": "chain-3",
+      "question": "desglosame por trimestre",
+      "category": "ventas",
+      "response": "**Ventas por Trimestre en 2025**\n\n| Trimestre | Venta |\n|:----------|------:|\n| Q1 | $21.028.349,49 |\n| Q2 | $22.431.877,50 |\n| Q3 | $21.803.871,21 |\n| Q4 | $23.910.299,77 |\n\n",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "usedContext": true,
+      "durationMs": 1459
+    },
+    {
+      "id": "chain-4",
+      "question": "el segundo cuánto nos debe?",
+      "category": "clientes",
+      "response": "El cliente Universidad de Buenos Aires nos debe $ 0,00.",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "usedContext": true,
+      "durationMs": 893
+    },
+    {
+      "id": "chain-5",
+      "question": "mostrame las facturas del primero",
+      "category": "clientes",
+      "response": "```json\n{\n  \"model\": \"account.move\",\n  \"domainJson\": \"[[\\\"partner_id\\\", \\\"=\\\", 10], [\\\"move_type\\\", \\\"in\\\", [\\\"out_invoice\\\", \\\"out_refund\\\"]], [\\\"state\\\", \\\"!=\\\", \\\"cancel\\\"]]\",\n  \"limit\": 10,\n  \"fieldsJson\": \"[\\\"name\\\", \\\"partner_id\\\", \\\"invoice_date\\\", \\\"amount_total\\\", \\\"amount_residual\\\", \\\"state\\\"]\"\n}\n```\n| Factura | Cliente | Fecha | Importe | Pendiente | Estado |\n|:--------|:--------|:--------|:--------|:--------|:--------|\n| FC/2025/12/0022 | Hospital Provincial Rosario | 24/12/2025 | $49.233.889,00 | $49.233.889,00 | Publicado |\n",
+      "success": true,
+      "hasData": true,
+      "askedClarification": false,
+      "usedContext": true,
+      "durationMs": 2152
+    }
+  ]
+}
